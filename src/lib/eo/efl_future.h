@@ -13,75 +13,51 @@
 typedef Eo Efl_Promise;
 #define _EFL_PROMISE_EO_CLASS_TYPE
 
-#define EFL_FUTURE_CLASS efl_future_class_get()
-EWAPI const Efl_Class *efl_future_class_get(void); /**< @since 1.19 */
+typedef struct _Efl_Future Efl_Future;
 
-/**
- * @var EINA_ERROR_FUTURE_CANCEL
- * @brief The error identifier corresponding to a future being canceled.
- */
 EAPI extern Eina_Error EINA_ERROR_FUTURE_CANCEL; /**< @since 1.19 */
 
-/** Parameter passed in event callbacks in case of future failure to proceed.
- *
- * @ingroup Efl_Future
- */
-typedef struct _Efl_Future_Event_Failure Efl_Future_Event_Failure;
-struct _Efl_Future_Event_Failure
-{
-   Efl_Promise *next; /** The promise to the next future. Allowing to send a processed value down the chain. */
-   Eina_Error error; /** The error generated trying to process the request. */
-};
-
-/** Parameter passed in event callbacks in case of future succeeding to proceed.
- *
- * @ingroup Efl_Future
- */
-typedef struct _Efl_Future_Event_Success Efl_Future_Event_Success;
-struct _Efl_Future_Event_Success
-{
-   Efl_Promise *next; /** The promise to the next future. Allowing to send a processed value down the chain. */
-   void *value; /** The value return by the processed request. The type is defined by the function executing the request. */
-};
-
-/** Parameter passed in event callbacks while a future is progressing a request.
- *
- * @ingroup Efl_Future
- */
-typedef struct _Efl_Future_Event_Progress Efl_Future_Event_Progress;
-struct _Efl_Future_Event_Progress
-{
-   Efl_Promise *next;  /** The promise to the next future. Allowing to send a processed progress down the chain. */
-   const void *progress; /** The progress status updated by the processed request. The type is defined by the function executing the request. */
-};
-
-EOAPI extern const Efl_Event_Description _EFL_FUTURE_EVENT_FAILURE;
-EOAPI extern const Efl_Event_Description _EFL_FUTURE_EVENT_SUCCESS;
-EOAPI extern const Efl_Event_Description _EFL_FUTURE_EVENT_PROGRESS;
-
-/** A future failed
- *
- * @ingroup Efl_Future
- */
-#define EFL_FUTURE_EVENT_FAILURE (&(_EFL_FUTURE_EVENT_FAILURE))
-
-/** A future succeeded
- *
- * @ingroup Efl_Future
- */
-#define EFL_FUTURE_EVENT_SUCCESS (&(_EFL_FUTURE_EVENT_SUCCESS))
-
-/** A future progressed
- *
- * @ingroup Efl_Future
- */
-#define EFL_FUTURE_EVENT_PROGRESS (&(_EFL_FUTURE_EVENT_PROGRESS))
+typedef void (*Efl_Future_Success_Cb)(void *data, Efl_Promise *next, const void *value);
+typedef void (*Efl_Future_Success_Steal_Cb)(void *data, Efl_Promise *next, void *value);
+typedef void (*Efl_Future_Failure_Cb)(void *data, Efl_Promise *next, Eina_Error error);
+typedef void (*Efl_Future_Progress_Cb)(void *data, Efl_Promise *next, const void *progress);
 
 /**
- * @brief Add sets of callbacks to handle the progress and the result of a future.
+ * @brief Add sets of callbacks to handle the progress and result of a future.
  *
  * callbacks are called depending on the outcome of the promise related to the future.
  *
+ * @param[in] f the future to track
+ * @param[in] success the callback to call in case of a succesful computation from the promise
+ * @param[in] failure the callback to call in case of a failure to deliver from the promise
+ * @param[in] progress the callback to call during the progression of the the promise, this is optional
+ * @param[in] data additional data to pass to the callback
+ *
+ * @return Return a new future when the callback has been successfully added pointing to the next request
+ * being processed during the future success, failure or progress callback (You can reference count the next
+ * promise to defer the result and make it asynchronous too). This future can be ignored.
+ *
+ * It is assumed that you are going to steal the value of this future and will
+ * deal by yourself of its life. There can only be one steal and it will be
+ * called last, once all the other then have been processed (It will technically
+ * wait for the next loop iteration to be propagated).
+ *
+ * @note except if you do reference count the Efl.Future object, you can only call once this function.
+ *
+ * @ingroup Efl_Future
+ */
+EAPI Efl_Future *efl_future_steal_then(Efl_Future *f,
+                                       Efl_Future_Success_Steal_Cb success,
+                                       Efl_Future_Failure_Cb failure,
+                                       Efl_Future_Progress_Cb progress,
+                                       void *data);
+
+/**
+ * @brief Add sets of callbacks to handle the progress and result of a future.
+ *
+ * callbacks are called depending on the outcome of the promise related to the future.
+ *
+ * @param[in] f the future to track
  * @param[in] success the callback to call in case of a succesful computation from the promise
  * @param[in] failure the callback to call in case of a failure to deliver from the promise
  * @param[in] progress the callback to call during the progression of the the promise, this is optional
@@ -93,9 +69,15 @@ EOAPI extern const Efl_Event_Description _EFL_FUTURE_EVENT_PROGRESS;
  *
  * @note except if you do reference count the Efl.Future object, you can only call once this function.
  *
+ * @since 1.20
+ *
  * @ingroup Efl_Future
  */
-EOAPI Efl_Future *efl_future_then(Eo *obj, Efl_Event_Cb success, Efl_Event_Cb failure, Efl_Event_Cb progress, const void *data);
+EAPI Efl_Future *efl_future_then(Efl_Future *f,
+                                 Efl_Future_Success_Cb success,
+                                 Efl_Future_Failure_Cb failure,
+                                 Efl_Future_Progress_Cb progress,
+                                 void *data);
 
 /**
  * @brief Cancel the need for that specific future.
@@ -107,9 +89,9 @@ EOAPI Efl_Future *efl_future_then(Eo *obj, Efl_Event_Cb success, Efl_Event_Cb fa
  *
  * @ingroup Efl_Future
  *
- * @since 1.19
+ * @since 1.20
  */
-EOAPI void efl_future_cancel(Eo *obj);
+EAPI void efl_future_cancel(Efl_Future *f);
 
 /**
  * @brief To be used in conjunction with when you plan to use efl_future_cancel
@@ -125,11 +107,7 @@ EOAPI void efl_future_cancel(Eo *obj);
  *
  * @ingroup Efl_Future
  */
-static inline void
-efl_future_use(Efl_Future **storage, Eo *future)
-{
-   efl_wref_add(future, storage);
-}
+EAPI void efl_future_use(Efl_Future **storage, Efl_Future *future);
 
 /**
  * @}
