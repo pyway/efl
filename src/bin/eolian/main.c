@@ -5,6 +5,7 @@
 #include "types.h"
 #include "headers.h"
 #include "sources.h"
+#include "checks.h"
 
 int _eolian_gen_log_dom = -1;
 
@@ -522,6 +523,11 @@ main(int argc, char **argv)
 
    if (!succ)
      goto end;
+
+   if (!strcmp(ext, ".eo"))
+     {
+        apply_checks(src, eobn);
+     }
 
    pret = 0;
 end:

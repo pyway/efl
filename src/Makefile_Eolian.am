@@ -56,7 +56,8 @@ bin_eolian_eolian_gen_SOURCES = \
                 bin/eolian/sources.c \
                 bin/eolian/sources.h \
                 bin/eolian/docs.c \
-                bin/eolian/docs.h
+                bin/eolian/docs.h \
+                bin/eolian/checks.c
 
 bin_eolian_eolian_gen_CPPFLAGS = -I$(top_builddir)/src/lib/efl @EOLIAN_CFLAGS@
 bin_eolian_eolian_gen_LDADD = @USE_EOLIAN_LIBS@
