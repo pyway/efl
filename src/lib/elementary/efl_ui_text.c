@@ -128,6 +128,7 @@ struct _Efl_Ui_Text_Data
    Eina_Bool                             input_panel_show_on_demand : 1;
    Eina_Bool                             anchors_updated : 1;
    Eina_Bool                             test_bit : 1;
+   Eina_Bool                             text_preloading : 1;
 };
 
 struct _Anchor
@@ -1070,27 +1071,14 @@ _cursor_geometry_recalc(Evas_Object *obj)
    elm_widget_show_region_set(obj, cx, cy, cw, ch, EINA_FALSE);
 }
 
-EOLIAN static void
-_efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
+static void
+_ui_text_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd, Eo *sw)
 {
-   Evas_Coord minw, minh, resw, resh;
    Evas_Coord fw, fh;
-   Eo *sw;
+   Evas_Coord minw, minh;
    Eina_Bool wrap;
 
-   evas_object_geometry_get(obj, NULL, NULL, &resw, &resh);
-
-   sw = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
-   if (!sw) return;
-
    wrap = efl_text_wrap_get(sw);
-
-   if (!sd->changed && (resw == sd->ent_w) && (resh == sd->ent_h)) return;
-
-   sd->changed = EINA_FALSE;
-   sd->ent_w = resw;
-   sd->ent_h = resh;
-
 
    evas_event_freeze(evas_object_evas_get(obj));
    if (sd->scroll)
@@ -1126,6 +1114,43 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
      }
    evas_event_thaw(evas_object_evas_get(obj));
    evas_event_thaw_eval(evas_object_evas_get(obj));
+}
+
+static void
+_ui_text_preload_layout(Eo *ui_text, Efl_Ui_Text_Data *sd)
+{
+   Eo *sw;
+   sw = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
+   if (sw)
+     {
+        // call size_formatted_get with async == true (will spawn a thread and return)
+        // Add callback to EFL_CANVAS_TEXT_LAYOUT_PRELOADED
+        // Continue sizing evaluation
+        _ui_text_sizing_eval(ui_text, sd, sw);
+     }
+   else
+     {
+        // Do something else?
+     }
+}
+
+EOLIAN static void
+_efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
+{
+   Evas_Coord resw, resh;
+
+   evas_object_geometry_get(obj, NULL, NULL, &resw, &resh);
+
+   if (!sd->changed && (resw == sd->ent_w) && (resh == sd->ent_h)) return;
+
+   sd->changed = EINA_FALSE;
+   sd->ent_w = resw;
+   sd->ent_h = resh;
+
+
+   if (sd->text_preloading) return;
+   _ui_text_preload_layout(obj, sd);
+
 
    _cursor_geometry_recalc(obj);
 }
