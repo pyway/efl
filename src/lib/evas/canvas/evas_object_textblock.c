@@ -12588,6 +12588,17 @@ _efl_canvas_text_size_formatted_get(Eo *eo_obj, Efl_Canvas_Text_Data *o, Evas_Co
    if (h) *h = o->formatted.h;
 }
 
+EOLIAN static void
+_efl_canvas_text_size_formatted_async_get(Eo *eo_obj, Efl_Canvas_Text_Data *o, Evas_Coord *w, Evas_Coord *h)
+{
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
+   evas_object_async_block(obj);
+   _relayout_if_needed(eo_obj, o, EINA_FALSE);
+
+   if (w) *w = o->formatted.w;
+   if (h) *h = o->formatted.h;
+}
+
 #ifdef BIDI_SUPPORT
 /**
  * @internal

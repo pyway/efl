@@ -127,6 +127,17 @@ Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annota
             h: int; [[The height of the object.]]
          }
       }
+      @property size_formatted_async {
+         [[Same as @.size_formatted \, but done async.
+           This requires a registration to the PRELOADED callback
+           from the object.
+         ]]
+         get {}
+         values {
+            w: int; [[The width of the object.]]
+            h: int; [[The height of the object.]]
+         }
+      }
       @property size_native {
          [[The native width and height.
 
