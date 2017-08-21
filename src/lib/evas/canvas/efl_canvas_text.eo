@@ -350,5 +350,6 @@ Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annota
       cursor,changed;
       changed;
       style_insets,changed; [[Called when the property @.style_insets changed.]]
+      preload,done;
    }
 }

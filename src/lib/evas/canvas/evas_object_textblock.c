@@ -81,6 +81,8 @@
 #include "evas_filter.h"
 #include "efl_canvas_filter_internal.eo.h"
 
+#include "Ecore.h"
+
 /* private magic number for textblock objects */
 static const char o_type[] = "textblock";
 
@@ -2874,6 +2876,15 @@ struct _Ctxt
    Eina_Bool handle_obstacles;
 };
 
+typedef struct _Async_Layout_Data Async_Layout_Data; 
+
+struct _Async_Layout_Data
+{
+   Eo               *obj;
+   Ctxt             *c;
+   int style_pad_l, style_pad_r, style_pad_t, style_pad_b;
+};
+
 static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
 static void _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti);
 static Evas_Object_Textblock_Format_Item *_layout_do_format(const Evas_Object *obj EINA_UNUSED, Ctxt *c, Evas_Object_Textblock_Format **_fmt, Evas_Object_Textblock_Node_Format *n, int *style_pad_l, int *style_pad_r, int *style_pad_t, int *style_pad_b, Eina_Bool create_item);
@@ -5451,11 +5462,25 @@ typedef struct _Evas_Textblock_Obstacle
 static Evas_Textblock_Obstacle *
 _layout_item_obstacle_get(Ctxt *c, Evas_Object_Textblock_Item *it);
 
+/**
+ * @internal
+ * Updates the layout context with given paragraph
+ *
+ * @param c the context to update.
+ *
+ * @return true if paragraph is unchanged and doesn't require handling
+ */
+static int
+_layout_paragraph_update(Ctxt *c)
+{
+
+}
+
 /* 0 means go ahead, 1 means break without an error, 2 means
  * break with an error, should probably clean this a bit (enum/macro)
  * FIXME ^ */
 static int
-_layout_par(Ctxt *c)
+_layout_par_async(Ctxt *c, Eina_Bool async)
 {
    Evas_Object_Textblock_Item *it;
    Eina_List *i;
@@ -5944,6 +5969,12 @@ end:
    return ret;
 }
 
+static int
+_layout_par(Ctxt *c)
+{
+   return _layout_par_async(c, EINA_FALSE);
+}
+
 /**
  * @internal
  * Invalidate text nodes according to format changes
@@ -6105,6 +6136,34 @@ _layout_split_text_because_format(const Evas_Object_Textblock_Format *fmt,
    return EINA_FALSE;
 }
 
+static void
+_efl_canvas_text_prelayout_cancel(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
+{
+   Async_Layout_Data *todo = data;
+   if (todo->c)
+     {
+        free(todo->c);
+     }
+}
+
+static void
+_efl_canvas_text_prelayout_do(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
+{
+   Async_Layout_Data *todo = data;
+   printf("prelayout do\n");
+}
+
+static void
+_efl_canvas_text_prelayout_done(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
+{
+   printf("DONE\n");
+   Async_Layout_Data *todo = data;
+
+   if (todo->c)
+     {
+        free(todo->c);
+     }
+ }
 /** FIXME: Document */
 static void
 _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
@@ -6297,6 +6356,8 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
      }
 }
 
+
+
 /**
  * @internal
  * Create the layout from the nodes.
@@ -6309,8 +6370,10 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
  * @param h_ret the object's calculated h.
  */
 static void
-_layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
+_layout_async(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret,
+      Eina_Bool async)
 {
+   printf("Async: %d\n", async);
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    Ctxt ctxt, *c;
@@ -6429,14 +6492,24 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
       EINA_INLIST_FOREACH(c->paragraphs, c->par)
         {
-           _layout_update_par(c);
-
+           Async_Layout_Data *todo;
+           todo = calloc(1, sizeof(*todo));
            /* Break if we should stop here. */
-           if (_layout_par(c))
+           if (_layout_par_async(c, async))
              {
-                last_vis_par = c->par;
+                // FIXME: should uncomment after proper inference
+                //last_vis_par = c->par;
                 break;
              }
+           printf("spawning thread\n");
+           Ecore_Thread *thread;
+           thread = ecore_thread_run(_efl_canvas_text_prelayout_do,
+                 _efl_canvas_text_prelayout_done,
+                 _efl_canvas_text_prelayout_cancel, todo);
+           ecore_thread_wait(thread, 1.0);
+
+
+           _layout_update_par(c);
 
            if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
              {
@@ -6503,11 +6576,17 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
         o->style_pad.b = style_pad_b;
         _paragraphs_clear(c);
         LYDBG("ZZ: ... layout #2\n");
-        _layout(eo_obj, w, h, w_ret, h_ret);
+        _layout_async(eo_obj, w, h, w_ret, h_ret, EINA_FALSE);
         efl_event_callback_call((Eo *) eo_obj, EFL_CANVAS_TEXT_EVENT_STYLE_INSETS_CHANGED, NULL);
      }
 
    c->o->obstacle_changed = EINA_FALSE;
+}
+
+static void
+_layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
+{
+   _layout_async(eo_obj, w, h, w_ret, h_ret, EINA_FALSE);
 }
 
 /*
@@ -6517,12 +6596,12 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
  * @param obj the evas object - NOT NULL.
  */
 static void
-_relayout(const Evas_Object *eo_obj)
+_relayout_async(const Evas_Object *eo_obj, Eina_Bool async)
 {
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
-   _layout(eo_obj, obj->cur->geometry.w, obj->cur->geometry.h,
-         &o->formatted.w, &o->formatted.h);
+   _layout_async(eo_obj, obj->cur->geometry.w, obj->cur->geometry.h,
+         &o->formatted.w, &o->formatted.h, async);
    o->formatted.valid = 1;
    o->formatted.oneline_h = 0;
    o->last_w = obj->cur->geometry.w;
@@ -6547,12 +6626,19 @@ _relayout(const Evas_Object *eo_obj)
 #endif
 }
 
+static void
+_relayout(const Evas_Object *eo_obj)
+{
+   _relayout_async(eo_obj, EINA_FALSE);
+}
+
 /*
  * @internal
  * Check if the object needs a relayout, and if so, execute it.
  */
 static inline void
-_relayout_if_needed(Evas_Object *eo_obj, const Efl_Canvas_Text_Data *o)
+_relayout_if_needed_async(Evas_Object *eo_obj, const Efl_Canvas_Text_Data *o,
+      Eina_Bool async)
 {
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
 
@@ -6560,8 +6646,14 @@ _relayout_if_needed(Evas_Object *eo_obj, const Efl_Canvas_Text_Data *o)
    if (!o->formatted.valid)
      {
         LYDBG("ZZ: relayout\n");
-        _relayout(eo_obj);
+        _relayout_async(eo_obj, async);
      }
+}
+
+static inline void
+_relayout_if_needed(Evas_Object *eo_obj, const Efl_Canvas_Text_Data *o)
+{
+   _relayout_if_needed_async(eo_obj, o, EINA_FALSE);
 }
 
 /**
@@ -12593,7 +12685,7 @@ _efl_canvas_text_size_formatted_async_get(Eo *eo_obj, Efl_Canvas_Text_Data *o, E
 {
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    evas_object_async_block(obj);
-   _relayout_if_needed(eo_obj, o, EINA_FALSE);
+   _relayout_if_needed_async(eo_obj, o, EINA_TRUE);
 
    if (w) *w = o->formatted.w;
    if (h) *h = o->formatted.h;

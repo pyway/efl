@@ -1088,7 +1088,7 @@ _ui_text_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd, Eo *sw)
         elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
         efl_gfx_size_set(sd->entry_edje, vw, vh);
         efl_gfx_size_get(sw, &tw, &th);
-        efl_canvas_text_size_formatted_get(sw, &fw, &fh);
+        efl_canvas_text_size_formatted_async_get(sw, &fw, &fh);
         evas_object_size_hint_min_set(sw, fw, fh);
         edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
         evas_object_size_hint_min_set(sw, -1, -1);
@@ -1117,6 +1117,15 @@ _ui_text_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd, Eo *sw)
 }
 
 static void
+_ui_text_prelayout_done(void *data, const Efl_Event *event EINA_UNUSED)
+{
+   Eo *ui_text = data;
+   EFL_UI_TEXT_DATA_GET(ui_text, sd);
+   sd->text_preloading = EINA_FALSE;
+   _cursor_geometry_recalc(ui_text);
+}
+
+static void
 _ui_text_preload_layout(Eo *ui_text, Efl_Ui_Text_Data *sd)
 {
    Eo *sw;
@@ -1126,6 +1135,8 @@ _ui_text_preload_layout(Eo *ui_text, Efl_Ui_Text_Data *sd)
         // call size_formatted_get with async == true (will spawn a thread and return)
         // Add callback to EFL_CANVAS_TEXT_LAYOUT_PRELOADED
         // Continue sizing evaluation
+        efl_event_callback_add
+          (sw, EFL_CANVAS_TEXT_EVENT_PRELOAD_DONE, _ui_text_prelayout_done, ui_text);
         _ui_text_sizing_eval(ui_text, sd, sw);
      }
    else
@@ -1148,11 +1159,12 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
    sd->ent_h = resh;
 
 
-   if (sd->text_preloading) return;
+   if (sd->text_preloading)
+     {
+        // FIXME: cancel the thread
+     }
+   sd->text_preloading = EINA_TRUE;
    _ui_text_preload_layout(obj, sd);
-
-
-   _cursor_geometry_recalc(obj);
 }
 
 static void
