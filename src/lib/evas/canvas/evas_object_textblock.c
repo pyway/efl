@@ -2882,7 +2882,8 @@ struct _Async_Layout_Data
 {
    Eo               *obj;
    Ctxt             *c;
-   int style_pad_l, style_pad_r, style_pad_t, style_pad_b;
+   int               style_pad_l, style_pad_r, style_pad_t, style_pad_b;
+   Eina_Bool         ret;
 };
 
 static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
@@ -2898,12 +2899,11 @@ static Evas_Object_Textblock_Format_Item *_layout_do_format(const Evas_Object *o
  * @param fmt The format to adjust - NOT NULL.
  */
 static void
-_layout_format_ascent_descent_adjust(const Evas_Object *eo_obj,
+_layout_format_ascent_descent_adjust(Evas_Object_Protected_Data *obj,
       Evas_Coord *maxascent, Evas_Coord *maxdescent,
       Evas_Object_Textblock_Format *fmt)
 {
    int ascent, descent;
-   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
 
    if (fmt->font.font)
      {
@@ -2942,7 +2942,7 @@ _layout_format_ascent_descent_adjust(const Evas_Object *eo_obj,
 }
 
 static void
-_layout_item_max_ascent_descent_calc(const Evas_Object *eo_obj,
+_layout_item_max_ascent_descent_calc(Evas_Object_Protected_Data *obj,
       Evas_Coord *maxascent, Evas_Coord *maxdescent,
       Evas_Object_Textblock_Item *it, Textblock_Position position)
 {
@@ -2968,8 +2968,6 @@ _layout_item_max_ascent_descent_calc(const Evas_Object *eo_obj,
           }
         else
           {
-             Evas_Object_Protected_Data *obj =
-                efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
              asc = ENFN->font_max_ascent_get(ENDT,
                    it->format->font.font);
           }
@@ -2990,8 +2988,6 @@ _layout_item_max_ascent_descent_calc(const Evas_Object *eo_obj,
           }
         else
           {
-             Evas_Object_Protected_Data *obj =
-                efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
              desc = ENFN->font_max_descent_get(ENDT,
                    it->format->font.font);
           }
@@ -3011,7 +3007,7 @@ _layout_item_max_ascent_descent_calc(const Evas_Object *eo_obj,
  * @param position The position inside the textblock
  */
 static void
-_layout_item_ascent_descent_adjust(const Evas_Object *eo_obj,
+_layout_item_ascent_descent_adjust(Evas_Object_Protected_Data *obj,
       Evas_Coord *ascent, Evas_Coord *descent,
       Evas_Object_Textblock_Item *it, Evas_Object_Textblock_Format *fmt)
 {
@@ -3043,13 +3039,11 @@ _layout_item_ascent_descent_adjust(const Evas_Object *eo_obj,
      {
         if (fmt)
           {
-             Evas_Object_Protected_Data *obj =
-               efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
              asc = ENFN->font_ascent_get(ENDT, fmt->font.font);
              desc = ENFN->font_descent_get(ENDT, fmt->font.font);
           }
      }
-   if (fmt) _layout_format_ascent_descent_adjust(eo_obj, &asc, &desc, fmt);
+   if (fmt) _layout_format_ascent_descent_adjust(obj, &asc, &desc, fmt);
 
    if (asc > *ascent) *ascent = asc;
    if (desc > *descent) *descent = desc;
@@ -3772,9 +3766,9 @@ _layout_last_line_max_descent_adjust_calc(Ctxt *c, const Evas_Object_Textblock_P
                {
                   Evas_Coord asc = 0, desc = 0;
                   Evas_Coord maxasc = 0, maxdesc = 0;
-                  _layout_item_ascent_descent_adjust(c->obj, &asc, &desc,
+                  _layout_item_ascent_descent_adjust(c->canvas, &asc, &desc,
                         it, it->format);
-                  _layout_item_max_ascent_descent_calc(c->obj, &maxasc, &maxdesc,
+                  _layout_item_max_ascent_descent_calc(c->canvas, &maxasc, &maxdesc,
                         it, c->position);
 
                   if (desc > c->descent)
@@ -3820,7 +3814,7 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
    /* If there are no text items yet, calc ascent/descent
     * according to the current format. */
    if (c->ascent + c->descent == 0)
-      _layout_item_ascent_descent_adjust(c->obj, &c->ascent, &c->descent,
+      _layout_item_ascent_descent_adjust(c->canvas, &c->ascent, &c->descent,
             NULL, fmt);
 
 #ifdef BIDI_SUPPORT
@@ -3844,9 +3838,9 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
              Evas_Coord asc = 0, desc = 0;
              Evas_Coord maxasc = 0, maxdesc = 0;
 
-             _layout_item_ascent_descent_adjust(c->obj, &asc, &desc,
+             _layout_item_ascent_descent_adjust(c->canvas, &asc, &desc,
                    it, it->format);
-             _layout_item_max_ascent_descent_calc(c->obj, &maxasc, &maxdesc,
+             _layout_item_max_ascent_descent_calc(c->canvas, &maxasc, &maxdesc,
                    it, c->position);
 
              if (asc > c->ascent)
@@ -4014,6 +4008,7 @@ static int
 _layout_text_cutoff_get(Ctxt *c, Evas_Object_Textblock_Format *fmt,
       const Evas_Object_Textblock_Text_Item *ti, int width_offset)
 {
+   Evas_Object_Protected_Data *obj = c->canvas;
    if (fmt->font.font)
      {
         Evas_Coord x;
@@ -4021,7 +4016,6 @@ _layout_text_cutoff_get(Ctxt *c, Evas_Object_Textblock_Format *fmt,
            c->marginr - c->x - ti->x_adjustment;
         if (x < 0)
           x = 0;
-        Evas_Object_Protected_Data *obj = efl_data_scope_get(c->obj, EFL_CANVAS_OBJECT_CLASS);
         return ENFN->font_last_up_to_pos(ENDT, fmt->font.font,
               &ti->text_props, x, 0, width_offset);
      }
@@ -4129,7 +4123,7 @@ _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti)
    const Evas_Object_Textblock_Format *fmt = ti->parent.format;
    int shad_sz = 0, shad_dst = 0, out_sz = 0;
    int dx = 0, minx = 0, maxx = 0, shx1, shx2;
-   Evas_Object_Protected_Data *obj = efl_data_scope_get(c->obj, EFL_CANVAS_OBJECT_CLASS);
+   Evas_Object_Protected_Data *obj = c->canvas;
 
    if (fmt->font.font)
      {
@@ -5473,22 +5467,6 @@ _layout_item_obstacle_get(Ctxt *c, Evas_Object_Textblock_Item *it);
 static int
 _layout_paragraph_update(Ctxt *c)
 {
-
-}
-
-/* 0 means go ahead, 1 means break without an error, 2 means
- * break with an error, should probably clean this a bit (enum/macro)
- * FIXME ^ */
-static int
-_layout_par_async(Ctxt *c, Eina_Bool async)
-{
-   Evas_Object_Textblock_Item *it;
-   Eina_List *i;
-   int ret = 0;
-   int wrap = -1;
-   char *line_breaks = NULL;
-   char *word_breaks = NULL;
-
    if (!c->par->logical_items)
      return 2;
 
@@ -5560,9 +5538,28 @@ _layout_par_async(Ctxt *c, Eina_Bool async)
                }
           }
      }
+   return 0;
+}
+
+/* 0 means go ahead, 1 means break without an error, 2 means
+ * break with an error, should probably clean this a bit (enum/macro)
+ * FIXME ^ */
+static int
+_layout_par_async(Ctxt *c, Eina_Bool async)
+{
+   Evas_Object_Textblock_Item *it;
+   Eina_List *i;
+   int ret = 0;
+   int wrap = -1;
+   char *line_breaks = NULL;
+   char *word_breaks = NULL;
+
+   if ((ret = _layout_paragraph_update(c)))
+     {
+        return ret;
+     }
 
    c->y = c->par->y;
-
 
 #ifdef BIDI_SUPPORT
    if (c->par->is_bidi)
@@ -5614,7 +5611,7 @@ _layout_par_async(Ctxt *c, Eina_Bool async)
         it->x = c->x;
         if (it->type == EVAS_TEXTBLOCK_ITEM_TEXT)
           {
-             _layout_item_ascent_descent_adjust(c->obj, &c->ascent,
+             _layout_item_ascent_descent_adjust(c->canvas, &c->ascent,
                    &c->descent, it, it->format);
           }
         else
@@ -5627,7 +5624,7 @@ _layout_par_async(Ctxt *c, Eina_Bool async)
                   /* If there are no text items yet, calc ascent/descent
                    * according to the current format. */
                   if (c->ascent + c->descent == 0)
-                     _layout_item_ascent_descent_adjust(c->obj, &c->ascent,
+                     _layout_item_ascent_descent_adjust(c->canvas, &c->ascent,
                            &c->descent, it, it->format);
 
                   _layout_calculate_format_item_size(c->obj, fi, &c->ascent,
@@ -5660,14 +5657,14 @@ _layout_par_async(Ctxt *c, Eina_Bool async)
                {
                   int ascent = 0, descent = 0, maxasc = 0, maxdesc = 0;
 
-                  _layout_item_ascent_descent_adjust(c->obj, &ascent, &descent,
+                  _layout_item_ascent_descent_adjust(c->canvas, &ascent, &descent,
                         it, it->format);
 
                   if (c->position == TEXTBLOCK_POSITION_START)
-                     _layout_item_max_ascent_descent_calc(c->obj, &maxasc, &maxdesc,
+                     _layout_item_max_ascent_descent_calc(c->canvas, &maxasc, &maxdesc,
                            it, TEXTBLOCK_POSITION_SINGLE);
                   else
-                     _layout_item_max_ascent_descent_calc(c->obj, &maxasc, &maxdesc,
+                     _layout_item_max_ascent_descent_calc(c->canvas, &maxasc, &maxdesc,
                            it, TEXTBLOCK_POSITION_END);
 
                   if (ascent > maxasc) maxasc = ascent;
@@ -6139,6 +6136,7 @@ _layout_split_text_because_format(const Evas_Object_Textblock_Format *fmt,
 static void
 _efl_canvas_text_prelayout_cancel(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
 {
+   printf(" *** CANCELLED ***\n");
    Async_Layout_Data *todo = data;
    if (todo->c)
      {
@@ -6149,20 +6147,16 @@ _efl_canvas_text_prelayout_cancel(void *data EINA_UNUSED, Ecore_Thread *thread E
 static void
 _efl_canvas_text_prelayout_do(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
 {
+   printf(" **** DO ****\n");
    Async_Layout_Data *todo = data;
-   printf("prelayout do\n");
+   todo->ret = _layout_par_async(todo->c, EINA_TRUE);
 }
 
 static void
 _efl_canvas_text_prelayout_done(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
 {
-   printf("DONE\n");
-   Async_Layout_Data *todo = data;
-
-   if (todo->c)
-     {
-        free(todo->c);
-     }
+   printf(" **** DONE ****\n");
+ //  Async_Layout_Data *todo = data;
  }
 /** FIXME: Document */
 static void
@@ -6373,7 +6367,7 @@ static void
 _layout_async(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret,
       Eina_Bool async)
 {
-   printf("Async: %d\n", async);
+   printf("_layout_async: async = %d\n", async);
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    Ctxt ctxt, *c;
@@ -6382,7 +6376,8 @@ _layout_async(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret,
 
    LYDBG("ZZ: layout %p %4ix%4i | w=%4i | last_w=%4i --- '%s'\n", eo_obj, w, h, obj->cur->geometry.w, o->last_w, o->markup_text);
    /* setup context */
-   c = &ctxt;
+   //c = &ctxt;
+   c = calloc(1, sizeof(*c));
    c->obj = (Evas_Object *)eo_obj;
    c->o = o;
    c->paragraphs = c->par = NULL;
@@ -6482,6 +6477,9 @@ _layout_async(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret,
       int par_index_step = o->num_paragraphs / TEXTBLOCK_PAR_INDEX_SIZE;
       int par_count = 1; /* Force it to take the first one */
       int par_index_pos = 0;
+      Eina_List *threads = NULL;
+      Ecore_Thread *thread;
+      Eina_List *i;
 
       c->position = TEXTBLOCK_POSITION_START;
 
@@ -6490,23 +6488,40 @@ _layout_async(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret,
       /* Clear all of the index */
       memset(o->par_index, 0, sizeof(o->par_index));
 
+      int jobcount = 0;
       EINA_INLIST_FOREACH(c->paragraphs, c->par)
         {
-           Async_Layout_Data *todo;
-           todo = calloc(1, sizeof(*todo));
-           /* Break if we should stop here. */
-           if (_layout_par_async(c, async))
+#if 0
+           if (1)
              {
+           /* Break if we should stop here. */
+                Async_Layout_Data *todo;
+                todo = calloc(1, sizeof(*todo));
+                Ctxt *ci;
+
+                ci = calloc(1, sizeof(*ci));
+                todo->c = ci;
+                *ci = *c;
+
+                printf("spawning thread #%d\n", ++jobcount);
+                printf(" -- c->par=%p\n", c->par);
+                thread = ecore_thread_run(_efl_canvas_text_prelayout_do,
+                      _efl_canvas_text_prelayout_done,
+                      _efl_canvas_text_prelayout_cancel, todo);
+
+                threads = eina_list_append(threads, thread);
                 // FIXME: should uncomment after proper inference
                 //last_vis_par = c->par;
                 break;
              }
-           printf("spawning thread\n");
-           Ecore_Thread *thread;
-           thread = ecore_thread_run(_efl_canvas_text_prelayout_do,
-                 _efl_canvas_text_prelayout_done,
-                 _efl_canvas_text_prelayout_cancel, todo);
-           ecore_thread_wait(thread, 1.0);
+
+           EINA_LIST_FOREACH(threads, i, thread)
+             {
+                ecore_thread_wait(thread, 100);
+             }
+#else
+           _layout_par_async(c, EINA_FALSE);
+#endif
 
 
            _layout_update_par(c);
@@ -12748,6 +12763,7 @@ _size_native_calc_line_finalize(const Evas_Object *eo_obj,
       Evas_Coord *ascent, Evas_Coord *descent,
       Evas_Coord *w, Textblock_Position position)
 {
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Evas_Object_Textblock_Item *it, *last_it = NULL;
    Eina_List *i;
    Eina_Bool is_bidi = EINA_FALSE;
@@ -12762,7 +12778,7 @@ _size_native_calc_line_finalize(const Evas_Object *eo_obj,
          * according to the current format. */
         if (it->format)
           {
-             _layout_item_ascent_descent_adjust(eo_obj, &asc, &desc,
+             _layout_item_ascent_descent_adjust(obj, &asc, &desc,
                                                 it, it->format);
           }
 
@@ -12804,9 +12820,9 @@ _size_native_calc_line_finalize(const Evas_Object *eo_obj,
         else
           {
              Evas_Coord maxasc = 0, maxdesc = 0;
-             _layout_item_ascent_descent_adjust(eo_obj, ascent, descent,
+             _layout_item_ascent_descent_adjust(obj, ascent, descent,
                    it, it->format);
-             _layout_item_max_ascent_descent_calc(eo_obj, &maxasc, &maxdesc,
+             _layout_item_max_ascent_descent_calc(obj, &maxasc, &maxdesc,
                    it, position);
 
              if (maxasc > *ascent)
@@ -12840,6 +12856,7 @@ _size_native_calc_paragraph_size(const Evas_Object *eo_obj,
    Evas_Object_Textblock_Item *it;
    Eina_List *line_items = NULL;
    Evas_Coord w = 0, y = 0, wmax = 0, h = 0, ascent = 0, descent = 0;
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
 
 #ifdef BIDI_SUPPORT
    if (par->is_bidi)
@@ -12874,7 +12891,7 @@ _size_native_calc_paragraph_size(const Evas_Object *eo_obj,
                   /* If there are no text items yet, calc ascent/descent
                    * according to the current format. */
                   if ((ascent + descent) == 0)
-                     _layout_item_ascent_descent_adjust(eo_obj, &ascent,
+                     _layout_item_ascent_descent_adjust(obj, &ascent,
                            &descent, it, it->format);
 
                   _layout_calculate_format_item_size(eo_obj, fi, &ascent,
@@ -12883,7 +12900,7 @@ _size_native_calc_paragraph_size(const Evas_Object *eo_obj,
           }
         else
           {
-             _layout_item_ascent_descent_adjust(eo_obj, &ascent,
+             _layout_item_ascent_descent_adjust(obj, &ascent,
                    &descent, it, it->format);
           }
      }
