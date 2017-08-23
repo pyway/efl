@@ -3635,12 +3635,11 @@ _layout_line_reorder(Evas_Object_Textblock_Line *line)
 
 /* FIXME: doc */
 static void
-_layout_calculate_format_item_size(const Evas_Object *eo_obj,
+_layout_calculate_format_item_size(Evas_Object_Protected_Data *obj,
       const Evas_Object_Textblock_Format_Item *fi,
       Evas_Coord *maxascent, Evas_Coord *maxdescent,
       Evas_Coord *_y, Evas_Coord *_w, Evas_Coord *_h)
 {
-   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    /* Adjust sizes according to current line height/scale */
    Evas_Coord w, h;
    const char *p, *s;
@@ -3817,7 +3816,7 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
           {
              Evas_Object_Textblock_Format_Item *fi = _ITEM_FORMAT(it);
              if (!fi->formatme) goto loop_advance;
-             _layout_calculate_format_item_size(c->obj, fi, &c->ascent,
+             _layout_calculate_format_item_size(c->evas_o, fi, &c->ascent,
                    &c->descent, &fi->y, &fi->parent.w, &fi->parent.h);
              fi->parent.adv = fi->parent.w;
           }
@@ -5598,7 +5597,7 @@ _layout_par(Ctxt *c)
                      _layout_item_ascent_descent_adjust(c->evas_o, &c->ascent,
                            &c->descent, it, it->format);
 
-                  _layout_calculate_format_item_size(c->obj, fi, &c->ascent,
+                  _layout_calculate_format_item_size(c->evas_o, fi, &c->ascent,
                         &c->descent, &fi->y, &fi->parent.w, &fi->parent.h);
                   fi->parent.adv = fi->parent.w;
                }
@@ -12641,6 +12640,8 @@ _size_native_calc_line_finalize(const Evas_Object *eo_obj,
    Evas_Object_Textblock_Item *it, *last_it = NULL;
    Eina_List *i;
    Eina_Bool is_bidi = EINA_FALSE;
+   Evas_Object_Protected_Data *obj =
+      efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
 
    it = eina_list_data_get(items);
    *w = 0;
@@ -12652,8 +12653,6 @@ _size_native_calc_line_finalize(const Evas_Object *eo_obj,
          * according to the current format. */
         if (it->format)
           {
-             Evas_Object_Protected_Data *obj =
-                efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
              _layout_item_ascent_descent_adjust(obj, &asc, &desc,
                                                 it, it->format);
           }
@@ -12690,13 +12689,11 @@ _size_native_calc_line_finalize(const Evas_Object *eo_obj,
 
              Evas_Object_Textblock_Format_Item *fi = _ITEM_FORMAT(it);
              if (!fi->formatme) goto loop_advance;
-             _layout_calculate_format_item_size(eo_obj, fi, ascent,
+             _layout_calculate_format_item_size(obj, fi, ascent,
                    descent, &fy, &fw, &fh);
           }
         else
           {
-             Evas_Object_Protected_Data *obj =
-                efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
              Evas_Coord maxasc = 0, maxdesc = 0;
              _layout_item_ascent_descent_adjust(obj, ascent, descent,
                    it, it->format);
@@ -12773,7 +12770,7 @@ _size_native_calc_paragraph_size(const Evas_Object *eo_obj,
                      _layout_item_ascent_descent_adjust(obj, &ascent,
                            &descent, it, it->format);
 
-                  _layout_calculate_format_item_size(eo_obj, fi, &ascent,
+                  _layout_calculate_format_item_size(obj, fi, &ascent,
                         &descent, &fy, &fw, &fh);
                }
           }
