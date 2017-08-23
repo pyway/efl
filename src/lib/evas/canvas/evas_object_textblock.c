@@ -1,4 +1,3 @@
-#define TEXT_PAR_USE_ASYNC
 /**
  * @internal
  * @subsection Evas_Object_Textblock_Internal Internal Textblock Object Tutorial
@@ -65,7 +64,6 @@
 
 #define EFL_CANVAS_OBJECT_BETA
 #define EFL_CANVAS_FILTER_INTERNAL_PROTECTED
-#define TEXT_PAR_ASYNC
 
 #include "evas_common_private.h"
 #include "evas_private.h"
@@ -579,12 +577,6 @@ struct _Efl_Text_Annotate_Annotation
 #define _FMT(x) (o->default_format.format.x)
 #define _FMT_INFO(x) (o->default_format.info.x)
 
-#ifdef TEXT_PAR_USE_ASYNC
-# include "Ecore.h"
-typedef struct _Async_Layout_Data Async_Layout_Data;
-#endif
-
-
 /* Size of the index array */
 #define TEXTBLOCK_PAR_INDEX_SIZE 10
 struct _Evas_Object_Textblock
@@ -645,9 +637,6 @@ struct _Evas_Object_Textblock
       Eina_Hash                       *sources;
       Text_Item_Filter                *text_items; // inlist
    } gfx_filter;
-#ifdef TEXT_PAR_USE_ASYNC
-
-#endif
    Eina_Bool                           redraw : 1;
    Eina_Bool                           changed : 1;
    Eina_Bool                           obstacle_changed : 1;
@@ -660,9 +649,6 @@ struct _Evas_Object_Textblock
    Eina_Bool                           changed_paragraph_direction : 1;
    Eina_Bool                           multiline : 1;
    Eina_Bool                           wrap_changed : 1;
-#ifdef TEXT_PAR_USE_ASYNC
-
-#endif
 };
 
 struct _Evas_Textblock_Selection_Iterator
@@ -2887,16 +2873,6 @@ struct _Ctxt
    Eina_Bool width_changed : 1;
    Eina_Bool handle_obstacles : 1;
 };
-
-#ifdef TEXT_PAR_USE_ASYNC
-# include "Ecore.h"
-struct _Async_Layout_Data
-{
-   Eo               *obj;
-   Ctxt             *c;
-   int style_pad_l, style_pad_r, style_pad_t, style_pad_b;
-};
-#endif
 
 static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
 static void _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti);
@@ -5553,7 +5529,6 @@ _layout_par(Ctxt *c)
           }
      }
 
-   /* FIXME: need to resolve later */
    c->y = c->par->y;
 
 
