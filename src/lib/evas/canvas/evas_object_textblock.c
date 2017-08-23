@@ -1,3 +1,13 @@
+#define TIME_INIT(name) \
+   clock_t _ ## name ## _start = 0, _## name ## _end = 0;
+#define TIME_START(name) \
+   _ ## name ## _start = clock();
+#define TIME_END(name) \
+   _ ## name ## _end = clock();
+#define TIME_PRINT(name) \
+   printf("TIME (" # name "): %f\n", \
+         (float) (_ ## name ## _end - _ ## name ## _start) / CLOCKS_PER_SEC);
+
 /**
  * @internal
  * @subsection Evas_Object_Textblock_Internal Internal Textblock Object Tutorial
@@ -6304,6 +6314,8 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
 static void
 _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 {
+   TIME_INIT(_layout);
+   TIME_START(_layout);
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    Ctxt ctxt, *c;
@@ -6420,16 +6432,22 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       /* Clear all of the index */
       memset(o->par_index, 0, sizeof(o->par_index));
 
+      TIME_INIT(_layout_pars);
+      TIME_START(_layout_pars);
       EINA_INLIST_FOREACH(c->paragraphs, c->par)
         {
            _layout_update_par(c);
 
            /* Break if we should stop here. */
+           TIME_INIT(_par);
+           TIME_START(_par);
            if (_layout_par(c))
              {
                 last_vis_par = c->par;
                 break;
              }
+           TIME_END(_par);
+           TIME_PRINT(_par);
 
            if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
              {
@@ -6438,6 +6456,8 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                 o->par_index[par_index_pos++] = c->par;
              }
         }
+      TIME_END(_layout_pars);
+      TIME_PRINT(_layout_pars);
 
       /* Clear the rest of the paragraphs and mark as invisible */
       if (c->par)
@@ -6501,6 +6521,8 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
      }
 
    c->o->obstacle_changed = EINA_FALSE;
+   TIME_END(_layout);
+   TIME_PRINT(_layout);
 }
 
 /*
