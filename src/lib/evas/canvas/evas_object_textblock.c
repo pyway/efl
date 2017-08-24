@@ -5466,9 +5466,6 @@ _layout_par(Ctxt *c)
    char *line_breaks = NULL;
    char *word_breaks = NULL;
 
-   if (!c->par->logical_items)
-     return 2;
-
    /* We want to show it. */
    c->par->visible = 1;
 
@@ -5478,37 +5475,6 @@ _layout_par(Ctxt *c)
 
    if (c->par->text_node)
      {
-        /* Skip this paragraph if width is the same, there is no ellipsis
-         * and we aren't just calculating. */
-        if (!c->par->text_node->is_new && !c->par->text_node->dirty &&
-              !c->width_changed && c->par->lines &&
-              !c->o->have_ellipsis && !c->o->obstacle_changed &&
-              !c->o->wrap_changed)
-          {
-             Evas_Object_Textblock_Line *ln;
-             /* Update c->line_no */
-             ln = (Evas_Object_Textblock_Line *)
-                EINA_INLIST_GET(c->par->lines)->last;
-             if (ln)
-                c->line_no = c->par->line_no + ln->line_no + 1;
-
-             /* After this par we are no longer at the beginning, as there
-              * must be some text in the par. */
-             if (!EINA_INLIST_GET(c->par)->next)
-               {
-                  c->position = (c->position == TEXTBLOCK_POSITION_START) ?
-                     TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
-               }
-             else
-               {
-                  if (c->position == TEXTBLOCK_POSITION_START)
-                     c->position = TEXTBLOCK_POSITION_ELSE;
-               }
-
-             if (c->par->last_fw > c->wmax) c->wmax = c->par->last_fw;
-             return 0;
-          }
-
         c->par->text_node->dirty = EINA_FALSE;
         c->par->text_node->is_new = EINA_FALSE;
         c->par->rendered = EINA_FALSE;
@@ -6300,6 +6266,42 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
      }
 }
 
+static int
+_layout_par_is_dirty(Ctxt *c)
+{
+   /* Skip this paragraph if width is the same, there is no ellipsis
+    * and we aren't just calculating. */
+   if (!c->par->text_node->is_new && !c->par->text_node->dirty &&
+         !c->width_changed && c->par->lines &&
+         !c->o->have_ellipsis && !c->o->obstacle_changed &&
+         !c->o->wrap_changed)
+     {
+        Evas_Object_Textblock_Line *ln;
+        /* Update c->line_no */
+        ln = (Evas_Object_Textblock_Line *)
+           EINA_INLIST_GET(c->par->lines)->last;
+        if (ln)
+           c->line_no = c->par->line_no + ln->line_no + 1;
+
+        /* After this par we are no longer at the beginning, as there
+         * must be some text in the par. */
+        if (!EINA_INLIST_GET(c->par)->next)
+          {
+             c->position = (c->position == TEXTBLOCK_POSITION_START) ?
+                TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
+          }
+        else
+          {
+             if (c->position == TEXTBLOCK_POSITION_START)
+                c->position = TEXTBLOCK_POSITION_ELSE;
+          }
+
+        if (c->par->last_fw > c->wmax) c->wmax = c->par->last_fw;
+        return 0;
+     }
+   return 1;
+}
+
 /**
  * @internal
  * Create the layout from the nodes.
@@ -6435,8 +6437,10 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
         {
            _layout_update_par(c);
 
+           if (!c->par->logical_items) break;
+
            /* Break if we should stop here. */
-           if (_layout_par(c))
+           if (!_layout_par_is_dirty(c) || _layout_par(c))
              {
                 last_vis_par = c->par;
                 break;
