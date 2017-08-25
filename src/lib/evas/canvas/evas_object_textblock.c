@@ -2858,6 +2858,8 @@ struct _Ctxt
 
    Eina_List *obs_infos; /**< Extra information for items in current line. */
 
+   Eina_List *done_paragraphs;
+
    int x, y;
    int w, h;
    int wmax, hmax;
@@ -2887,6 +2889,7 @@ struct _Par_Ctxt
 
    Eina_List *hyphen_items;
 
+   int wmax, hmax;
    int ascent, descent;
    int maxascent, maxdescent;
    int marginl, marginr;
@@ -6303,11 +6306,12 @@ _layout_par_is_dirty(Ctxt *c, Evas_Object_Textblock_Paragraph *par)
          !c->o->have_ellipsis && !c->o->obstacle_changed &&
          !c->o->wrap_changed)
      {
-        Evas_Object_Textblock_Line *ln;
-        /* Update c->line_no */
-        ln = (Evas_Object_Textblock_Line *)
-           EINA_INLIST_GET(par->lines)->last;
         // FIXME: postpone line numbering for later
+        //
+        //Evas_Object_Textblock_Line *ln;
+        /* Update c->line_no */
+        //ln = (Evas_Object_Textblock_Line *)
+        //   EINA_INLIST_GET(par->lines)->last;
         //if (ln)
         //   c->c->line_no = par->line_no + ln->line_no + 1;
 
@@ -6414,6 +6418,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    c->obs_infos = NULL;
    c->hyphen_ti = NULL;
    c->handle_obstacles = EINA_FALSE;
+   c->done_paragraphs = NULL;
 
    /* Update all obstacles */
    if (c->o->obstacle_changed || c->width_changed)
@@ -6512,9 +6517,18 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            if (!_layout_par_is_dirty(c, par))
              {
                 Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
-                _layout_par(ctx);
-                last_vis_par = c->par;
-                break;
+                int ret = _layout_par(ctx);
+                c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
+
+                // Update max width
+                if (ctx->wmax > c->wmax)
+                   c->wmax = ctx->wmax;
+
+                if (ret)
+                  {
+                     last_vis_par = c->par;
+                     break;
+                  }
              }
 
            /* FIXME: calculate line height, wmax, hmax, line numbering etc.
@@ -6530,6 +6544,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
              }
         }
 
+      // FIXME: also a big fixme: can happen with ellipsis
       /* Clear the rest of the paragraphs and mark as invisible */
       if (c->par)
         {
@@ -6541,6 +6556,38 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                 _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
                 c->par = (Evas_Object_Textblock_Paragraph *)
                    EINA_INLIST_GET(c->par)->next;
+             }
+        }
+
+      // FIXME: adjust heights of first and last lines (ascent/descent vs.
+      // maxascent/descent)
+      // Something like:
+      // max_ascent_descent_adjust(first_par->lines, START)
+      // max_ascent_descent_adjust(last_par->lines->last, END)
+
+      // FIXME: adjust y etc here!!!
+      if (c->done_paragraphs)
+        {
+           int total_line_no = 0;
+           Evas_Object_Textblock_Line *ln;
+           Evas_Object_Textblock_Paragraph *prev_par;
+           prev_par = c->done_paragraphs->data;
+           prev_par->y = 0;
+           // FIXME: Now, adjust all lines of this pargraph.
+           // Do this again in the loop
+           c->done_paragraphs = eina_list_remove_list(c->done_paragraphs,
+                 c->done_paragraphs);
+           EINA_LIST_FREE(c->done_paragraphs, par)
+             {
+                int line_no = 0;
+                par->line_no = total_line_no;
+                EINA_INLIST_FOREACH(par->lines, ln)
+                  {
+                     ln->line_no = line_no++;
+                     total_line_no++;
+                  }
+                par->y = prev_par->y + prev_par->h;
+                prev_par = par;
              }
         }
 
