@@ -2874,6 +2874,27 @@ struct _Ctxt
    Eina_Bool handle_obstacles : 1;
 };
 
+typedef struct _Par_Ctxt Par_Ctxt;
+
+struct _Par_Ctxt
+{
+   int idx;
+   int num;
+   Ctxt *c;
+   Evas_Object_Textblock_Paragraph *par;
+   Evas_Object_Textblock_Line *ln;
+   Evas_Object_Textblock_Text_Item *hyphen_ti;
+
+   Eina_List *hyphen_items;
+
+   int ascent, descent;
+   int maxascent, maxdescent;
+   int marginl, marginr;
+   double align, valign;
+   Evas_Textblock_Align_Auto align_auto : 2;
+   int x, y;
+};
+
 static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
 static void _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti);
 static Evas_Object_Textblock_Format_Item *_layout_do_format(const Evas_Object *obj EINA_UNUSED, Ctxt *c, Evas_Object_Textblock_Format **_fmt, Evas_Object_Textblock_Node_Format *n, int *style_pad_l, int *style_pad_r, int *style_pad_t, int *style_pad_b, Eina_Bool create_item);
@@ -3046,7 +3067,7 @@ _layout_item_ascent_descent_adjust(Evas_Object_Protected_Data *obj,
  * @param fmt The format to use info from - NOT NULL.
  */
 static void
-_layout_line_new(Ctxt *c, Evas_Object_Textblock_Format *fmt)
+_layout_line_new(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
 {
    c->ln = calloc(1, sizeof(Evas_Object_Textblock_Line));
    c->align = fmt->halign;
@@ -3503,7 +3524,7 @@ _layout_format_value_handle(Ctxt *c, Evas_Object_Textblock_Format *fmt, const ch
  * @param c the context to work on - Not NULL.
  */
 static inline double
-_layout_line_align_get(Ctxt *c)
+_layout_line_align_get(Par_Ctxt *c)
 {
 #ifdef BIDI_SUPPORT
    if ((c->align_auto == EVAS_TEXTBLOCK_ALIGN_AUTO_NORMAL) && c->ln)
@@ -3790,7 +3811,7 @@ typedef struct _Evas_Textblock_Obstacle_Info
  * @param add_line true if we should create a line, false otherwise.
  */
 static void
-_layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
+_layout_line_finalize(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
 {
    Evas_Object_Textblock_Item *it;
    Evas_Coord obs_preadv = 0, obs_adv = 0;
@@ -3801,7 +3822,7 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
    /* If there are no text items yet, calc ascent/descent
     * according to the current format. */
    if (c->ascent + c->descent == 0)
-      _layout_item_ascent_descent_adjust(c->evas_o, &c->ascent, &c->descent,
+      _layout_item_ascent_descent_adjust(c->c->evas_o, &c->ascent, &c->descent,
             NULL, fmt);
 
 #ifdef BIDI_SUPPORT
@@ -3816,7 +3837,7 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
           {
              Evas_Object_Textblock_Format_Item *fi = _ITEM_FORMAT(it);
              if (!fi->formatme) goto loop_advance;
-             _layout_calculate_format_item_size(c->evas_o, fi, &c->ascent,
+             _layout_calculate_format_item_size(c->c->evas_o, fi, &c->ascent,
                    &c->descent, &fi->y, &fi->parent.w, &fi->parent.h);
              fi->parent.adv = fi->parent.w;
           }
@@ -3825,10 +3846,10 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
              Evas_Coord asc = 0, desc = 0;
              Evas_Coord maxasc = 0, maxdesc = 0;
 
-             _layout_item_ascent_descent_adjust(c->evas_o, &asc, &desc,
+             _layout_item_ascent_descent_adjust(c->c->evas_o, &asc, &desc,
                    it, it->format);
-             _layout_item_max_ascent_descent_calc(c->evas_o, &maxasc, &maxdesc,
-                   it, c->position);
+             _layout_item_max_ascent_descent_calc(c->c->evas_o, &maxasc, &maxdesc,
+                   it, c->c->position);
 
              if (asc > c->ascent)
                 c->ascent = asc;
@@ -3843,7 +3864,7 @@ _layout_line_finalize(Ctxt *c, Evas_Object_Textblock_Format *fmt)
 loop_advance:
         obs_preadv = 0;
         obs_adv = 0;
-        EINA_LIST_FOREACH(c->obs_infos, i, obs_info)
+        EINA_LIST_FOREACH(c->c->obs_infos, i, obs_info)
           {
              if (obs_info->it == it)
                {
@@ -3859,7 +3880,7 @@ loop_advance:
      }
 
    /* clear obstacle info for this line */
-   EINA_LIST_FREE(c->obs_infos, obs_info)
+   EINA_LIST_FREE(c->c->obs_infos, obs_info)
      {
         free(obs_info);
      }
@@ -3869,45 +3890,46 @@ loop_advance:
    /* Handle max ascent and descent if at the edges */
      {
         /* If it's the start, offset the line according to the max ascent. */
-        if (((c->position == TEXTBLOCK_POSITION_START) ||
-                 (c->position == TEXTBLOCK_POSITION_SINGLE))
+        if (((c->c->position == TEXTBLOCK_POSITION_START) ||
+                 (c->c->position == TEXTBLOCK_POSITION_SINGLE))
               && (c->maxascent > c->ascent))
           {
              Evas_Coord ascdiff;
 
              ascdiff = c->maxascent - c->ascent;
              c->ln->y += ascdiff;
-             c->y += ascdiff;
-             c->ln->y += c->o->style_pad.t;
-             c->y += c->o->style_pad.t;
+             c->c->y += ascdiff;
+             c->c->ln->y += c->c->o->style_pad.t;
+             c->c->y += c->c->o->style_pad.t;
           }
      }
 
    c->ln->baseline = c->ascent;
    /* FIXME: Actually needs to be adjusted using the actual font value.
     * Also, underline_extend is actually not being used. */
-   if (c->have_underline2)
+   if (c->c->have_underline2)
      {
-        if (c->descent < 4) c->underline_extend = 4 - c->descent;
+        if (c->descent < 4) c->c->underline_extend = 4 - c->descent;
      }
-   else if (c->have_underline)
+   else if (c->c->have_underline)
      {
-        if (c->descent < 2) c->underline_extend = 2 - c->descent;
+        if (c->descent < 2) c->c->underline_extend = 2 - c->descent;
      }
-   c->ln->line_no = c->line_no - c->ln->par->line_no;
-   c->line_no++;
-   c->y += c->ascent + c->descent;
-   if (c->w >= 0)
+   // FIXME: move to after layout_par
+   //c->ln->line_no = c->line_no - c->ln->par->line_no;
+   //c->line_no++;
+   //c->y += c->ascent + c->descent;
+   if (c->c->w >= 0)
      {
-        /* c->o->style_pad.r is already included in the line width, so it's
+        /* c->c->o->style_pad.r is already included in the line width, so it's
          * not used in this calculation. . */
-        c->ln->x = c->marginl + c->o->style_pad.l +
-           ((c->w - c->ln->w - c->o->style_pad.l -
+        c->ln->x = c->marginl + c->c->o->style_pad.l +
+           ((c->c->w - c->ln->w - c->c->o->style_pad.l -
              c->marginl - c->marginr) * _layout_line_align_get(c));
      }
    else
      {
-        c->ln->x = c->marginl + c->o->style_pad.l;
+        c->ln->x = c->marginl + c->c->o->style_pad.l;
      }
 
    c->par->h = c->ln->y + c->ln->h;
@@ -3918,16 +3940,16 @@ loop_advance:
 
    /* Calculate new max width */
      {
-        Evas_Coord new_wmax = c->ln->w +
-           c->marginl + c->marginr - (c->o->style_pad.l + c->o->style_pad.r);
+        Evas_Coord new_wmax = c->c->ln->w +
+           c->c->marginl + c->marginr - (c->c->o->style_pad.l + c->c->o->style_pad.r);
         if (new_wmax > c->par->last_fw)
            c->par->last_fw = new_wmax;
-        if (new_wmax > c->wmax)
-           c->wmax = new_wmax;
+        if (new_wmax > c->c->wmax)
+           c->c->wmax = new_wmax;
      }
 
-   if (c->position == TEXTBLOCK_POSITION_START)
-      c->position = TEXTBLOCK_POSITION_ELSE;
+   if (c->c->position == TEXTBLOCK_POSITION_START)
+      c->c->position = TEXTBLOCK_POSITION_ELSE;
 }
 
 /**
@@ -3939,7 +3961,7 @@ loop_advance:
  * @param add_line true if we should create a line, false otherwise.
  */
 static void
-_layout_line_advance(Ctxt *c, Evas_Object_Textblock_Format *fmt)
+_layout_line_advance(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
 {
    Evas_Object_Textblock_Format *last_fmt = fmt;
 
@@ -3949,8 +3971,8 @@ _layout_line_advance(Ctxt *c, Evas_Object_Textblock_Format *fmt)
            eina_inlist_append(EINA_INLIST_GET(c->ln->items),
                  EINA_INLIST_GET(_ITEM(c->hyphen_ti)));
         c->hyphen_ti->parent.ln = c->ln;
-        c->o->hyphen_items =
-           eina_list_append(c->o->hyphen_items, c->hyphen_ti);
+        c->hyphen_items =
+           eina_list_append(c->hyphen_items, c->hyphen_ti);
         c->hyphen_ti = NULL;
      }
    if (c->ln->items)
@@ -5288,7 +5310,9 @@ _layout_handle_ellipsis(Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *i)
 
    c->position = (c->position == TEXTBLOCK_POSITION_START) ?
       TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
-   _layout_line_finalize(c, ellip_ti->parent.format);
+
+   //FIXME: for ellipsis cases
+   //_layout_line_finalize(c, ellip_ti->parent.format);
 }
 
 /* Don't do much for the meanwhile. */
@@ -5457,7 +5481,7 @@ _layout_item_obstacle_get(Ctxt *c, Evas_Object_Textblock_Item *it);
  * break with an error, should probably clean this a bit (enum/macro)
  * FIXME ^ */
 static int
-_layout_par(Ctxt *c)
+_layout_par(Par_Ctxt *cpar)
 {
    Evas_Object_Textblock_Item *it;
    Eina_List *i;
@@ -5465,26 +5489,29 @@ _layout_par(Ctxt *c)
    int wrap = -1;
    char *line_breaks = NULL;
    char *word_breaks = NULL;
+   Evas_Object_Textblock_Paragraph *par = cpar->par;
+   Ctxt *c = cpar->c;
 
    /* We want to show it. */
-   c->par->visible = 1;
+   par->visible = 1;
 
    /* Check if we need to skip this paragraph because it's already layouted
     * correctly, and mark handled nodes as dirty. */
-   c->par->line_no = c->line_no;
+   // FIXME: do line numbering later
+   //par->line_no = c->line_no;
 
-   if (c->par->text_node)
+   if (par->text_node)
      {
-        c->par->text_node->dirty = EINA_FALSE;
-        c->par->text_node->is_new = EINA_FALSE;
-        c->par->rendered = EINA_FALSE;
+        par->text_node->dirty = EINA_FALSE;
+        par->text_node->is_new = EINA_FALSE;
+        par->rendered = EINA_FALSE;
 
         /* Merge back and clear the paragraph */
           {
              Eina_List *itr, *itr_next;
              Evas_Object_Textblock_Item *ititr, *prev_it = NULL;
-             _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
-             EINA_LIST_FOREACH_SAFE(c->par->logical_items, itr, itr_next, ititr)
+             _paragraph_clear(c->evas, c->o, c->evas_o, par);
+             EINA_LIST_FOREACH_SAFE(par->logical_items, itr, itr_next, ititr)
                {
                   if (ititr->merge && prev_it &&
                         (prev_it->type == EVAS_TEXTBLOCK_ITEM_TEXT) &&
@@ -5492,8 +5519,8 @@ _layout_par(Ctxt *c)
                     {
                        _layout_item_merge_and_free(c, _ITEM_TEXT(prev_it),
                              _ITEM_TEXT(ititr));
-                       c->par->logical_items =
-                          eina_list_remove_list(c->par->logical_items, itr);
+                       par->logical_items =
+                          eina_list_remove_list(par->logical_items, itr);
                     }
                   else
                     {
@@ -5504,18 +5531,18 @@ _layout_par(Ctxt *c)
           }
      }
 
-   c->y = c->par->y;
+   c->y = par->y;
 
 
 #ifdef BIDI_SUPPORT
-   if (c->par->is_bidi)
+   if (par->is_bidi)
      {
-        _layout_update_bidi_props(c->o, c->par);
+        _layout_update_bidi_props(c->o, par);
      }
 #endif
 
-   it = _ITEM(eina_list_data_get(c->par->logical_items));
-   _layout_line_new(c, it->format);
+   it = _ITEM(eina_list_data_get(par->logical_items));
+   _layout_line_new(cpar, it->format);
    /* We walk on our own because we want to be able to add items from
     * inside the list and then walk them on the next iteration. */
 
@@ -5533,8 +5560,8 @@ _layout_par(Ctxt *c)
 
    Eina_Bool item_preadv = EINA_FALSE;
    Evas_Textblock_Obstacle *obs = NULL;
-   c->par->last_fw = 0;
-   for (i = c->par->logical_items ; i ; )
+   par->last_fw = 0;
+   for (i = par->logical_items ; i ; )
      {
         Evas_Coord prevdescent = 0, prevascent = 0;
         int adv_line = 0;
@@ -5829,7 +5856,7 @@ _layout_par(Ctxt *c)
                          }
                        else
                          {
-                            _layout_line_advance(c, it->format);
+                            _layout_line_advance(cpar, it->format);
                             item_preadv = EINA_FALSE;
                          }
                     }
@@ -5880,20 +5907,20 @@ _layout_par(Ctxt *c)
                {
                   it = _ITEM(eina_list_data_get(i));
                }
-             _layout_line_advance(c, it->format);
+             _layout_line_advance(cpar, it->format);
           }
      }
 
    if (c->ln->items)
      {
-        if (!EINA_INLIST_GET(c->par)->next)
+        if (!EINA_INLIST_GET(par)->next)
           {
              c->position = (c->position == TEXTBLOCK_POSITION_START) ?
                 TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
           }
 
         /* Here 'it' is the last format used */
-        _layout_line_finalize(c, it->format);
+        _layout_line_finalize(cpar, it->format);
      }
 
 end:
@@ -5903,10 +5930,10 @@ end:
       free(word_breaks);
 
 #ifdef BIDI_SUPPORT
-   if (c->par->bidi_props)
+   if (par->bidi_props)
      {
-        evas_bidi_paragraph_props_unref(c->par->bidi_props);
-        c->par->bidi_props = NULL;
+        evas_bidi_paragraph_props_unref(par->bidi_props);
+        par->bidi_props = NULL;
      }
 #endif
 
@@ -6267,25 +6294,26 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
 }
 
 static int
-_layout_par_is_dirty(Ctxt *c)
+_layout_par_is_dirty(Ctxt *c, Evas_Object_Textblock_Paragraph *par)
 {
    /* Skip this paragraph if width is the same, there is no ellipsis
     * and we aren't just calculating. */
-   if (!c->par->text_node->is_new && !c->par->text_node->dirty &&
-         !c->width_changed && c->par->lines &&
+   if (!par->text_node->is_new && !par->text_node->dirty &&
+         !c->width_changed && par->lines &&
          !c->o->have_ellipsis && !c->o->obstacle_changed &&
          !c->o->wrap_changed)
      {
         Evas_Object_Textblock_Line *ln;
         /* Update c->line_no */
         ln = (Evas_Object_Textblock_Line *)
-           EINA_INLIST_GET(c->par->lines)->last;
-        if (ln)
-           c->line_no = c->par->line_no + ln->line_no + 1;
+           EINA_INLIST_GET(par->lines)->last;
+        // FIXME: postpone line numbering for later
+        //if (ln)
+        //   c->c->line_no = par->line_no + ln->line_no + 1;
 
         /* After this par we are no longer at the beginning, as there
          * must be some text in the par. */
-        if (!EINA_INLIST_GET(c->par)->next)
+        if (!EINA_INLIST_GET(par)->next)
           {
              c->position = (c->position == TEXTBLOCK_POSITION_START) ?
                 TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
@@ -6296,10 +6324,47 @@ _layout_par_is_dirty(Ctxt *c)
                 c->position = TEXTBLOCK_POSITION_ELSE;
           }
 
-        if (c->par->last_fw > c->wmax) c->wmax = c->par->last_fw;
+        if (par->last_fw > c->wmax) c->wmax = par->last_fw;
         return 0;
      }
    return 1;
+}
+
+#define PAR_CTXS_SIZE 4
+static Par_Ctxt *
+_layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
+      Ctxt *c, int num)
+{
+   Par_Ctxt *ctx = NULL;
+   for (int i = 0; i < PAR_CTXS_SIZE; i++)
+     {
+        ctx = &contexts[i];
+        if (ctx->idx < 0)
+          {
+             ctx->idx = i;
+             ctx->c = c;
+             ctx->par = par;
+             ctx->num = num;
+             break;
+          }
+     }
+   if (ctx)
+     {
+        //ctx->fmt = NULL;
+        ctx->x = c->y = 0;
+        //ctx->h = h;
+        //ctx->wmax = c->hmax = 0;
+        ctx->ascent = c->descent = 0;
+        ctx->maxascent = c->maxdescent = 0;
+        ctx->marginl = c->marginr = 0;
+        //ctx->line_no = 0;
+        ctx->align = 0.0;
+        ctx->align_auto = EINA_TRUE;
+        ctx->ln = NULL;
+        //ctx->obs_infos = NULL;
+        ctx->hyphen_ti = NULL;
+     }
+   return ctx;
 }
 
 /**
@@ -6319,6 +6384,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    Ctxt ctxt, *c;
+   Par_Ctxt contexts[4] = {  }; // contexts array
    Evas *eo_e;
    int style_pad_l = 0, style_pad_r = 0, style_pad_t = 0, style_pad_b = 0;
 
@@ -6422,9 +6488,11 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    /* Start of visual layout creation */
    {
       Evas_Object_Textblock_Paragraph *last_vis_par = NULL;
+      Evas_Object_Textblock_Paragraph *par;
       int par_index_step = o->num_paragraphs / TEXTBLOCK_PAR_INDEX_SIZE;
       int par_count = 1; /* Force it to take the first one */
       int par_index_pos = 0;
+      int par_num = 0;
 
       c->position = TEXTBLOCK_POSITION_START;
 
@@ -6433,18 +6501,26 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       /* Clear all of the index */
       memset(o->par_index, 0, sizeof(o->par_index));
 
-      EINA_INLIST_FOREACH(c->paragraphs, c->par)
+      EINA_INLIST_FOREACH(c->paragraphs, par)
         {
-           _layout_update_par(c);
+           // FIXME: postpone y calculations to after _layout_par
+           //_layout_update_par(c);
 
            if (!c->par->logical_items) break;
 
            /* Break if we should stop here. */
-           if (!_layout_par_is_dirty(c) || _layout_par(c))
+           if (!_layout_par_is_dirty(c, par))
              {
+                Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
+                _layout_par(ctx);
                 last_vis_par = c->par;
                 break;
              }
+
+           /* FIXME: calculate line height, wmax, hmax, line numbering etc.
+            * after all layouting of paragraphs were completed.
+            * Each par_ctx should have its own wmax, so just walk
+            * on all those and get the maximum wmax. */
 
            if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
              {
