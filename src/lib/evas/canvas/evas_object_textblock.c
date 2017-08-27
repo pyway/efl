@@ -3088,6 +3088,7 @@ _layout_line_new(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
 static inline Evas_Object_Textblock_Paragraph *
 _layout_find_paragraph_by_y(Efl_Canvas_Text_Data *o, Evas_Coord y)
 {
+   printf("_layout_find_paragraph_by_y\n");
    Evas_Object_Textblock_Paragraph *start, *par;
    int i;
 
@@ -3108,12 +3109,14 @@ _layout_find_paragraph_by_y(Efl_Canvas_Text_Data *o, Evas_Coord y)
            return par;
      }
 
+   printf ("-- not found!\n");
    return NULL;
 }
 
 static inline Evas_Object_Textblock_Paragraph *
 _layout_find_paragraph_by_line_no(Efl_Canvas_Text_Data *o, int line_no)
 {
+   printf("layout_find_paragraph_by_line_no\n");
    Evas_Object_Textblock_Paragraph *start, *par;
    int i;
 
@@ -3137,6 +3140,7 @@ _layout_find_paragraph_by_line_no(Efl_Canvas_Text_Data *o, int line_no)
            return par;
      }
 
+   printf(" -- not found!\n");
    return NULL;
 }
 /* End of rbtree index functios */
@@ -5487,6 +5491,7 @@ _layout_item_obstacle_get(Ctxt *c, Evas_Object_Textblock_Item *it);
 static int
 _layout_par(Par_Ctxt *cpar)
 {
+   printf("**** LAYOUT_PAR ****\n");
    Evas_Object_Textblock_Item *it;
    Eina_List *i;
    int ret = 0;
@@ -6356,12 +6361,12 @@ _layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
    if (ctx)
      {
         //ctx->fmt = NULL;
-        ctx->x = c->y = 0;
+        ctx->x = ctx->y = 0;
         //ctx->h = h;
-        //ctx->wmax = c->hmax = 0;
-        ctx->ascent = c->descent = 0;
-        ctx->maxascent = c->maxdescent = 0;
-        ctx->marginl = c->marginr = 0;
+        //ctx->wmax = ctx->hmax = 0;
+        ctx->ascent = ctx->descent = 0;
+        ctx->maxascent = ctx->maxdescent = 0;
+        ctx->marginl = ctx->marginr = 0;
         //ctx->line_no = 0;
         ctx->align = 0.0;
         ctx->align_auto = EINA_TRUE;
@@ -6531,14 +6536,11 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            if (!c->par->logical_items) break;
 
            /* Break if we should stop here. */
-           if (_layout_par_is_dirty(c, par))
+           if (par->text_node && _layout_par_is_dirty(c, par))
              {
                 Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
                 int ret = _layout_par(ctx);
                 _layout_par_ctx_del(contexts, ctx);
-
-                // FIXME: should be some ordered DS like rbtree
-                c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
 
                 // Update max width
                 if (ctx->wmax > c->wmax)
@@ -6550,6 +6552,9 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                      break;
                   }
              }
+
+           // FIXME: should be some ordered DS like rbtree
+           c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
 
            /* FIXME: calculate line height, wmax, hmax, line numbering etc.
             * after all layouting of paragraphs were completed.
@@ -6588,21 +6593,25 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       // XXX: Updating y values for paragraphs and lines
       if (c->done_paragraphs)
         {
-           int total_line_no = 0;
            Evas_Object_Textblock_Line *ln;
-           Evas_Object_Textblock_Paragraph *prev_par;
-           prev_par = c->done_paragraphs->data;
-           prev_par->y = 0;
-           c->done_paragraphs = eina_list_remove_list(c->done_paragraphs,
-                 c->done_paragraphs);
+           Evas_Object_Textblock_Paragraph *prev_par = NULL;
+
            // Update paragraphs' values
+           int total_line_no = 0;
            EINA_LIST_FREE(c->done_paragraphs, par)
              {
+                Evas_Coord prev_y = 0, prev_h = 0;
+                Evas_Coord lny;
                 int line_no = 0;
+                if (prev_par)
+                  {
+                     prev_y = prev_par->y;
+                     prev_h = prev_par->h;
+                  }
                 par->line_no = total_line_no;
-                par->y = prev_par->y + prev_par->h;
-                Evas_Coord lny = 0;
+                par->y = prev_y + prev_h;
                 // Update lines' values
+                lny = 0;
                 EINA_INLIST_FOREACH(par->lines, ln)
                   {
                      ln->line_no = line_no++;
@@ -11762,8 +11771,10 @@ evas_textblock_cursor_pen_geometry_get(const Evas_Textblock_Cursor *cur, Evas_Co
    if (!cur) return -1;
    Evas_Object_Protected_Data *obj = efl_data_scope_get(cur->obj, EFL_CANVAS_OBJECT_CLASS);
    evas_object_async_block(obj);
-   return _evas_textblock_cursor_char_pen_geometry_common_get(
+   int ret = _evas_textblock_cursor_char_pen_geometry_common_get(
          ENFN->font_pen_coords_get, cur, cx, cy, cw, ch);
+   printf("geometry cx=%d\n", *cx);
+   return ret;
 }
 
 EAPI int
