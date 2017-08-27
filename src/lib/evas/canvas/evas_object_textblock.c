@@ -2886,6 +2886,7 @@ struct _Par_Ctxt
    Evas_Object_Textblock_Paragraph *par;
    Evas_Object_Textblock_Line *ln;
    Evas_Object_Textblock_Text_Item *hyphen_ti;
+   Textblock_Position position;
 
    Eina_List *hyphen_items;
 
@@ -3088,7 +3089,6 @@ _layout_line_new(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
 static inline Evas_Object_Textblock_Paragraph *
 _layout_find_paragraph_by_y(Efl_Canvas_Text_Data *o, Evas_Coord y)
 {
-   printf("_layout_find_paragraph_by_y\n");
    Evas_Object_Textblock_Paragraph *start, *par;
    int i;
 
@@ -3109,14 +3109,12 @@ _layout_find_paragraph_by_y(Efl_Canvas_Text_Data *o, Evas_Coord y)
            return par;
      }
 
-   printf ("-- not found!\n");
    return NULL;
 }
 
 static inline Evas_Object_Textblock_Paragraph *
 _layout_find_paragraph_by_line_no(Efl_Canvas_Text_Data *o, int line_no)
 {
-   printf("layout_find_paragraph_by_line_no\n");
    Evas_Object_Textblock_Paragraph *start, *par;
    int i;
 
@@ -3140,7 +3138,6 @@ _layout_find_paragraph_by_line_no(Efl_Canvas_Text_Data *o, int line_no)
            return par;
      }
 
-   printf(" -- not found!\n");
    return NULL;
 }
 /* End of rbtree index functios */
@@ -3856,7 +3853,7 @@ _layout_line_finalize(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
              _layout_item_ascent_descent_adjust(c->c->evas_o, &asc, &desc,
                    it, it->format);
              _layout_item_max_ascent_descent_calc(c->c->evas_o, &maxasc, &maxdesc,
-                   it, c->c->position);
+                   it, c->position);
 
              if (asc > c->ascent)
                 c->ascent = asc;
@@ -3895,22 +3892,28 @@ loop_advance:
    c->ln->y = c->y; // y is local to the paragraph
    c->ln->h = c->ascent + c->descent;
 
-   ///* Handle max ascent and descent if at the edges */
-   //  {
-   //     /* If it's the start, offset the line according to the max ascent. */
-   //     if (((c->c->position == TEXTBLOCK_POSITION_START) ||
-   //              (c->c->position == TEXTBLOCK_POSITION_SINGLE))
-   //           && (c->maxascent > c->ascent))
-   //       {
-   //          Evas_Coord ascdiff;
+#if 1
+   /* Handle max ascent and descent if at the edges */
+     {
+        /* If it's the start, offset the line according to the max ascent. */
+        printf("Position: %d, maxasc=%d, asc=%d\n", c->position,
+              c->maxascent, c->ascent);
+        if (((c->position == TEXTBLOCK_POSITION_START) ||
+                 (c->position == TEXTBLOCK_POSITION_SINGLE))
+              && (c->maxascent > c->ascent))
+          {
+             Evas_Coord ascdiff;
 
-   //          ascdiff = c->maxascent - c->ascent;
-   //          c->ln->y += ascdiff;
-   //          c->c->y += ascdiff;
-   //          c->ln->y += c->c->o->style_pad.t;
-   //          c->c->y += c->c->o->style_pad.t;
-   //       }
-   //  }
+             ascdiff = c->maxascent - c->ascent;
+             printf(" -- ln->y=%d\n", c->ln->y);
+             c->ln->y += ascdiff;
+             printf(" -- diff + ln->y=%d\n", c->ln->y);
+             c->y += ascdiff;
+             c->ln->y += c->c->o->style_pad.t;
+             c->y += c->c->o->style_pad.t;
+          }
+     }
+#endif
 
    c->ln->baseline = c->ascent;
    /* FIXME: Actually needs to be adjusted using the actual font value.
@@ -5491,7 +5494,6 @@ _layout_item_obstacle_get(Ctxt *c, Evas_Object_Textblock_Item *it);
 static int
 _layout_par(Par_Ctxt *cpar)
 {
-   printf("**** LAYOUT_PAR ****\n");
    Evas_Object_Textblock_Item *it;
    Eina_List *i;
    int ret = 0;
@@ -6392,6 +6394,34 @@ _layout_par_contexts_init(Par_Ctxt *contexts)
      }
 }
 
+static Evas_Coord
+_layout_par_horizontal_offset_get(Ctxt *c,
+      Evas_Object_Textblock_Line *ln,
+      Evas_Object_Textblock_Item *it,
+      Textblock_Position position)
+{
+   Evas_Coord asc = 0, desc = 0;
+   Evas_Coord maxasc = 0, maxdesc = 0;
+   Evas_Coord diff = 0;
+
+   _layout_item_ascent_descent_adjust(c->evas_o, &asc, &desc,
+         it, it->format);
+   _layout_item_max_ascent_descent_calc(c->evas_o, &maxasc, &maxdesc,
+         it, position);
+
+   if (position == TEXTBLOCK_POSITION_START)
+     {
+        if (maxasc > asc) diff = (maxasc - asc);
+     }
+   else // FIXME: for single line
+     {
+        if (maxdesc > desc) diff = (maxdesc - desc);
+     }
+
+   return diff;
+}
+      
+
 /**
  * @internal
  * Create the layout from the nodes.
@@ -6519,8 +6549,11 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       int par_count = 1; /* Force it to take the first one */
       int par_index_pos = 0;
       int par_num = 0;
+      Evas_Object_Textblock_Paragraph *first_par, *last_par;
 
-      c->position = TEXTBLOCK_POSITION_START;
+      first_par = c->paragraphs;
+      last_par = (Evas_Object_Textblock_Paragraph *)
+         EINA_INLIST_GET(c->paragraphs)->last;
 
       if (par_index_step == 0) par_index_step = 1;
 
@@ -6539,6 +6572,16 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            if (par->text_node && _layout_par_is_dirty(c, par))
              {
                 Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
+                if (par == first_par)
+                  {
+                     printf("first par!\n");
+                     ctx->position = TEXTBLOCK_POSITION_START;
+                  }
+                else
+                  {
+                     ctx->position = TEXTBLOCK_POSITION_ELSE;
+                  }
+
                 int ret = _layout_par(ctx);
                 _layout_par_ctx_del(contexts, ctx);
 
@@ -6596,6 +6639,8 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            Evas_Object_Textblock_Line *ln;
            Evas_Object_Textblock_Paragraph *prev_par = NULL;
 
+           // Get first paragraph, adjust its first line's ascent (if needed)
+
            // Update paragraphs' values
            int total_line_no = 0;
            EINA_LIST_FREE(c->done_paragraphs, par)
@@ -6611,7 +6656,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                 par->line_no = total_line_no;
                 par->y = prev_y + prev_h;
                 // Update lines' values
-                lny = 0;
+                lny = par->lines->y;
                 EINA_INLIST_FOREACH(par->lines, ln)
                   {
                      ln->line_no = line_no++;
@@ -11773,7 +11818,6 @@ evas_textblock_cursor_pen_geometry_get(const Evas_Textblock_Cursor *cur, Evas_Co
    evas_object_async_block(obj);
    int ret = _evas_textblock_cursor_char_pen_geometry_common_get(
          ENFN->font_pen_coords_get, cur, cx, cy, cw, ch);
-   printf("geometry cx=%d\n", *cx);
    return ret;
 }
 
