@@ -2899,7 +2899,7 @@ struct _Par_Ctxt
    int x, y;
 };
 
-static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
+static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Paragraph *par, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
 static void _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti);
 static Evas_Object_Textblock_Format_Item *_layout_do_format(const Evas_Object *obj EINA_UNUSED, Ctxt *c, Evas_Object_Textblock_Format **_fmt, Evas_Object_Textblock_Node_Format *n, int *style_pad_l, int *style_pad_r, int *style_pad_t, int *style_pad_b, Eina_Bool create_item);
 
@@ -3959,8 +3959,9 @@ loop_advance:
            c->wmax = new_wmax;
      }
 
-   //if (c->c->position == TEXTBLOCK_POSITION_START)
-   //   c->c->position = TEXTBLOCK_POSITION_ELSE;
+   c->c->y = c->y;
+   if (c->position == TEXTBLOCK_POSITION_START)
+      c->position = TEXTBLOCK_POSITION_ELSE;
 }
 
 /**
@@ -3998,13 +3999,12 @@ _layout_line_advance(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
  * @internal
  * Create a new text layout item from the string and the format.
  *
- * @param c the context to work on - Not NULL.
  * @param fmt the format to use.
  * @param str the string to use.
  * @param len the length of the string.
  */
 static Evas_Object_Textblock_Text_Item *
-_layout_text_item_new(Ctxt *c EINA_UNUSED, Evas_Object_Textblock_Format *fmt)
+_layout_text_item_new(Evas_Object_Textblock_Format *fmt)
 {
    Evas_Object_Textblock_Text_Item *ti;
 
@@ -4058,7 +4058,7 @@ static Evas_Object_Textblock_Text_Item * _layout_hyphen_item_new(Ctxt *c, const 
  * @return the second (newly created) item.
  */
 static Evas_Object_Textblock_Text_Item *
-_layout_item_text_split_strip_white(Ctxt *c,
+_layout_item_text_split_strip_white(Par_Ctxt *c,
       Evas_Object_Textblock_Text_Item *ti, Eina_List *lti, size_t cut)
 {
    const Eina_Unicode *ts;
@@ -4068,14 +4068,14 @@ _layout_item_text_split_strip_white(Ctxt *c,
 
    if (!IS_AT_END(ti, cut) && (ti->text_props.text_len > 0))
      {
-        new_ti = _layout_text_item_new(c, ti->parent.format);
+        new_ti = _layout_text_item_new(ti->parent.format);
         new_ti->parent.text_node = ti->parent.text_node;
         new_ti->parent.text_pos = ti->parent.text_pos + cut;
         new_ti->parent.merge = EINA_TRUE;
 
         evas_common_text_props_split(&ti->text_props,
                                      &new_ti->text_props, cut);
-        _layout_text_add_logical_item(c, new_ti, lti);
+        _layout_text_add_logical_item(c->c, c->par, new_ti, lti);
      }
 
    /* Strip the previous white if needed */
@@ -4084,7 +4084,7 @@ _layout_item_text_split_strip_white(Ctxt *c,
         if (cut - 1 > 0)
           {
              size_t white_cut = cut - 1;
-             white_ti = _layout_text_item_new(c, ti->parent.format);
+             white_ti = _layout_text_item_new(ti->parent.format);
              white_ti->parent.text_node = ti->parent.text_node;
              white_ti->parent.text_pos = ti->parent.text_pos + white_cut;
              white_ti->parent.merge = EINA_TRUE;
@@ -4092,7 +4092,7 @@ _layout_item_text_split_strip_white(Ctxt *c,
 
              evas_common_text_props_split(&ti->text_props,
                    &white_ti->text_props, white_cut);
-             _layout_text_add_logical_item(c, white_ti, lti);
+             _layout_text_add_logical_item(c->c, c->par, white_ti, lti);
           }
         else
           {
@@ -4103,7 +4103,7 @@ _layout_item_text_split_strip_white(Ctxt *c,
 
    if (new_ti || white_ti)
      {
-        _text_item_update_sizes(c, ti);
+        _text_item_update_sizes(c->c, ti);
      }
    return new_ti;
 }
@@ -4254,13 +4254,14 @@ _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti)
  * @param rel item ti will be appened after, NULL = last.
  */
 static void
-_layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Text_Item *ti,
+_layout_text_add_logical_item(Ctxt *c,
+      Evas_Object_Textblock_Paragraph *par, Evas_Object_Textblock_Text_Item *ti,
       Eina_List *rel)
 {
    _text_item_update_sizes(c, ti);
 
-   c->par->logical_items = eina_list_append_relative_list(
-         c->par->logical_items, ti, rel);
+   par->logical_items = eina_list_append_relative_list(
+         par->logical_items, ti, rel);
 }
 
 static void
@@ -4367,7 +4368,7 @@ skip:
    /* If there's no parent text node, only create an empty item */
    if (!n)
      {
-        ti = _layout_text_item_new(c, queue->format);
+        ti = _layout_text_item_new(queue->format);
         ti->parent.text_node = NULL;
         ti->parent.text_pos = 0;
         _layout_text_append_add_logical_item(c, ti, rel);
@@ -4399,7 +4400,7 @@ skip:
              Evas_Font_Instance *cur_fi = NULL;
              size_t run_start;
              int run_len = script_len;
-             ti = _layout_text_item_new(c, queue->format);
+             ti = _layout_text_item_new(queue->format);
              ti->parent.text_node = n;
              ti->parent.text_pos = run_start = start + str - tbase;
 
@@ -4429,7 +4430,7 @@ skip:
                   /* There must be a next because of the test in the while. */
                   queue = (Layout_Text_Append_Queue *) EINA_INLIST_GET(queue)->next;
 
-                  new_ti = _layout_text_item_new(c, queue->format);
+                  new_ti = _layout_text_item_new(queue->format);
                   new_ti->parent.text_node = ti->parent.text_node;
                   new_ti->parent.text_pos = queue->start;
 
@@ -5152,7 +5153,7 @@ _layout_ellipsis_item_new(Ctxt *c, const Evas_Object_Textblock_Item *cur_it)
 
    /* We can free it here, cause there's only one ellipsis item per tb. */
    if (c->o->ellip_ti) _item_free(c->evas, c->o, c->evas_o, NULL, _ITEM(c->o->ellip_ti));
-   c->o->ellip_ti = ellip_ti = _layout_text_item_new(c, cur_it->format);
+   c->o->ellip_ti = ellip_ti = _layout_text_item_new(cur_it->format);
    ellip_ti->parent.text_node = cur_it->text_node;
    ellip_ti->parent.text_pos = cur_it->text_pos;
    script = evas_common_language_script_type_get(_ellip_str, len);
@@ -5195,18 +5196,18 @@ _layout_ellipsis_item_new(Ctxt *c, const Evas_Object_Textblock_Item *cur_it)
  * Handle ellipsis
  */
 static inline void
-_layout_handle_ellipsis(Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *i)
+_layout_handle_ellipsis(Par_Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *i)
 {
    Evas_Object_Textblock_Text_Item *ti, *ellip_ti;
    Evas_Object_Textblock_Item *last_it, *prev_it;
    Evas_Coord save_cx, ellip_w;
    Evas_Coord temp_w;
    int wrap;
-   ellip_ti = _layout_ellipsis_item_new(c, it);
+   ellip_ti = _layout_ellipsis_item_new(c->c, it);
    prev_it = last_it = it;
 
    save_cx = c->x;
-   temp_w = c->w;
+   temp_w = c->c->w;
    ellip_w = ellip_ti->parent.w;
 #ifdef BIDI_SUPPORT
    // XXX: with RTL considerations in mind, we need to take max(adv, w) as the
@@ -5238,7 +5239,7 @@ _layout_handle_ellipsis(Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *i)
           {
              ti = _ITEM_TEXT(last_it);
 
-             wrap = _layout_text_cutoff_get(c, last_it->format, ti,
+             wrap = _layout_text_cutoff_get(c->c, last_it->format, ti,
                   temp_w, c->x, ellip_ti->parent.w);
 
              if ((wrap > 0) && !IS_AT_END(ti, (size_t) wrap))
@@ -5268,7 +5269,7 @@ _layout_handle_ellipsis(Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *i)
              /* We will ignore format items. ex) tab
               * But, if there is <item> tag and size is acceptable, we have to insert it to line. */
              if (!strncmp(_ITEM_FORMAT(last_it)->item, "item", 4) &&
-                 ((temp_w - c->o->style_pad.l - c->o->style_pad.r - c->marginl - c->marginr) >= (c->x + last_it->adv)))
+                 ((temp_w - c->c->o->style_pad.l - c->c->o->style_pad.r - c->marginl - c->marginr) >= (c->x + last_it->adv)))
                {
                   break;
                }
@@ -5290,7 +5291,7 @@ _layout_handle_ellipsis(Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *i)
               * Because, base format is changed to last_it.
               * We can't reuse it. */
              temp_w += ellip_ti->parent.w;
-             ellip_ti = _layout_ellipsis_item_new(c, last_it);
+             ellip_ti = _layout_ellipsis_item_new(c->c, last_it);
              temp_w -= ellip_ti->parent.w;
              c->x -= last_it->adv;
              if (c->x < 0)
@@ -5392,7 +5393,7 @@ _item_get_cutoff(Ctxt *c, Evas_Object_Textblock_Item *it, Evas_Coord x, Evas_Coo
  * characters to split).
  */
 static inline void
-_layout_par_ellipsis_items(Ctxt *c, double ellip)
+_layout_par_ellipsis_items(Par_Ctxt *c, double ellip)
 {
    Evas_Object_Textblock_Item *it;
    Evas_Object_Textblock_Text_Item *ellip_ti;
@@ -5401,11 +5402,11 @@ _layout_par_ellipsis_items(Ctxt *c, double ellip)
    Evas_Coord l, h, off;
    int pos;
 
-   c->o->ellip_prev_it = NULL;
+   c->c->o->ellip_prev_it = NULL;
 
    /* calc exceed amount */
-   items_width = _calc_items_width(c);
-   exceed = items_width - (c->w - c->o->style_pad.l - c->o->style_pad.r
+   items_width = _calc_items_width(c->c);
+   exceed = items_width - (c->c->w - c->c->o->style_pad.l - c->c->o->style_pad.r
                          - c->marginl - c->marginr);
 
    if (exceed <= 0)
@@ -5414,7 +5415,7 @@ _layout_par_ellipsis_items(Ctxt *c, double ellip)
      {
         Evas_Object_Textblock_Item *first_it =
            _ITEM(eina_list_data_get(c->par->logical_items));
-        ellip_ti = _layout_ellipsis_item_new(c, first_it);
+        ellip_ti = _layout_ellipsis_item_new(c->c, first_it);
      }
    exceed += ellip_ti->parent.adv;
    items_cut = items_width * ellip;
@@ -5430,12 +5431,12 @@ _layout_par_ellipsis_items(Ctxt *c, double ellip)
            break;
         off += it->adv;
      }
-   c->o->ellip_prev_it = i;
-   if (it) ellip_ti = _layout_ellipsis_item_new(c, it);
+   c->c->o->ellip_prev_it = i;
+   if (it) ellip_ti = _layout_ellipsis_item_new(c->c, it);
 
 
    pos = (it && it->type == EVAS_TEXTBLOCK_ITEM_TEXT) ?
-      (_item_get_cutoff(c, it, l - off, ellip_ti->parent.w)) : -1;
+      (_item_get_cutoff(c->c, it, l - off, ellip_ti->parent.w)) : -1;
    if (pos >= 0)
      {
         _layout_item_text_split_strip_white(c, _ITEM_TEXT(it), i, pos);
@@ -5456,7 +5457,7 @@ _layout_par_ellipsis_items(Ctxt *c, double ellip)
      }
 
    pos = (it && it->type == EVAS_TEXTBLOCK_ITEM_TEXT) ?
-      (_item_get_cutoff(c, it, h - off, 0)) : -1;
+      (_item_get_cutoff(c->c, it, h - off, 0)) : -1;
    if (pos >= 0)
       _layout_item_text_split_strip_white(c, _ITEM_TEXT(it), j, pos + 1);
    if (it)
@@ -5464,9 +5465,9 @@ _layout_par_ellipsis_items(Ctxt *c, double ellip)
 }
 
 static inline void
-_layout_par_append_ellipsis(Ctxt *c)
+_layout_par_append_ellipsis(Par_Ctxt *c)
 {
-   Evas_Object_Textblock_Text_Item *ellip_ti = c->o->ellip_ti;
+   Evas_Object_Textblock_Text_Item *ellip_ti = c->c->o->ellip_ti;
    c->ln->items = (Evas_Object_Textblock_Item *)
       eina_inlist_append(EINA_INLIST_GET(c->ln->items),
             EINA_INLIST_GET(_ITEM(ellip_ti)));
@@ -5566,7 +5567,7 @@ _layout_par(Par_Ctxt *cpar)
         double ellip;
         ellip = it->format->ellipsis;
         if ((0 <= ellip) && (ellip < 1.0) && c->line_no == 0)
-           _layout_par_ellipsis_items(c, ellip);
+           _layout_par_ellipsis_items(cpar, ellip);
      }
 
    Eina_Bool item_preadv = EINA_FALSE;
@@ -5586,7 +5587,7 @@ _layout_par(Par_Ctxt *cpar)
           {
              //one more chance for ellipsis special cases
              if (c->o->ellip_prev_it == i)
-                _layout_par_append_ellipsis(c);
+                _layout_par_append_ellipsis(cpar);
 
              i = eina_list_next(i);
              continue;
@@ -5666,7 +5667,7 @@ _layout_par(Par_Ctxt *cpar)
                          !it->format->wrap_mixed && !it->format->wrap_hyphenation) ||
                      !c->o->multiline))
                {
-                  _layout_handle_ellipsis(c, it, i);
+                  _layout_handle_ellipsis(cpar, it, i);
                   ret = 1;
                   goto end;
                }
@@ -5805,7 +5806,7 @@ _layout_par(Par_Ctxt *cpar)
                              * If we can do ellipsis, just cut here. */
                             if (EINA_DBL_EQ(it->format->ellipsis, 1.0))
                               {
-                                 _layout_handle_ellipsis(c, it, i);
+                                 _layout_handle_ellipsis(cpar, it, i);
                                  ret = 1;
                                  goto end;
                               }
@@ -5839,7 +5840,7 @@ _layout_par(Par_Ctxt *cpar)
                     {
                        if (it->type == EVAS_TEXTBLOCK_ITEM_TEXT)
                          {
-                            _layout_item_text_split_strip_white(c,
+                            _layout_item_text_split_strip_white(cpar,
                                   _ITEM_TEXT(it), i, wrap);
                          }
                        if (obs)
@@ -5906,7 +5907,7 @@ _layout_par(Par_Ctxt *cpar)
                }
              if (!obs_info) cpar->x += it->adv;
              if (c->o->ellip_prev_it == i)
-                _layout_par_append_ellipsis(c);
+                _layout_par_append_ellipsis(cpar);
              i = eina_list_next(i);
              item_preadv = EINA_FALSE;
           }
@@ -6394,33 +6395,33 @@ _layout_par_contexts_init(Par_Ctxt *contexts)
      }
 }
 
-static Evas_Coord
-_layout_par_horizontal_offset_get(Ctxt *c,
-      Evas_Object_Textblock_Line *ln,
-      Evas_Object_Textblock_Item *it,
-      Textblock_Position position)
-{
-   Evas_Coord asc = 0, desc = 0;
-   Evas_Coord maxasc = 0, maxdesc = 0;
-   Evas_Coord diff = 0;
-
-   _layout_item_ascent_descent_adjust(c->evas_o, &asc, &desc,
-         it, it->format);
-   _layout_item_max_ascent_descent_calc(c->evas_o, &maxasc, &maxdesc,
-         it, position);
-
-   if (position == TEXTBLOCK_POSITION_START)
-     {
-        if (maxasc > asc) diff = (maxasc - asc);
-     }
-   else // FIXME: for single line
-     {
-        if (maxdesc > desc) diff = (maxdesc - desc);
-     }
-
-   return diff;
-}
-      
+//static Evas_Coord
+//_layout_par_horizontal_offset_get(Ctxt *c,
+//      Evas_Object_Textblock_Line *ln EINA_UNUSED,
+//      Evas_Object_Textblock_Item *it,
+//      Textblock_Position position)
+//{
+//   Evas_Coord asc = 0, desc = 0;
+//   Evas_Coord maxasc = 0, maxdesc = 0;
+//   Evas_Coord diff = 0;
+//
+//   _layout_item_ascent_descent_adjust(c->evas_o, &asc, &desc,
+//         it, it->format);
+//   _layout_item_max_ascent_descent_calc(c->evas_o, &maxasc, &maxdesc,
+//         it, position);
+//
+//   if (position == TEXTBLOCK_POSITION_START)
+//     {
+//        if (maxasc > asc) diff = (maxasc - asc);
+//     }
+//   else // FIXME: for single line
+//     {
+//        if (maxdesc > desc) diff = (maxdesc - desc);
+//     }
+//
+//   return diff;
+//}
+//      
 
 /**
  * @internal
@@ -6533,10 +6534,10 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    if (!c->par->logical_items)
      {
         Evas_Object_Textblock_Text_Item *ti;
-        ti = _layout_text_item_new(c, c->fmt);
+        ti = _layout_text_item_new(c->fmt);
         ti->parent.text_node = c->par->text_node;
         ti->parent.text_pos = 0;
-        _layout_text_add_logical_item(c, ti, NULL);
+        _layout_text_add_logical_item(c, c->par, ti, NULL);
      }
 
    /* End of logical layout creation */
@@ -6676,6 +6677,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
       if (last_vis_par)
         {
+           c->position = TEXTBLOCK_POSITION_END;
            c->hmax = last_vis_par->y + last_vis_par->h +
               _layout_last_line_max_descent_adjust_calc(c, last_vis_par);
         }
@@ -8302,7 +8304,7 @@ _layout_hyphen_item_new(Ctxt *c, const Evas_Object_Textblock_Text_Item *cur_ti)
      {
         _item_free(c->evas, c->o, c->evas_o, NULL, _ITEM(c->hyphen_ti));
      }
-   c->hyphen_ti = hyphen_ti = _layout_text_item_new(c, cur_ti->parent.format);
+   c->hyphen_ti = hyphen_ti = _layout_text_item_new(cur_ti->parent.format);
    hyphen_ti->parent.text_node = cur_ti->parent.text_node;
    hyphen_ti->parent.text_pos = cur_ti->parent.text_pos + cur_ti->text_props.text_len - 1;
    script = evas_common_language_script_type_get(_hyphen_str, len);
