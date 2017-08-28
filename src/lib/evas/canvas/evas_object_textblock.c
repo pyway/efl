@@ -3896,8 +3896,6 @@ loop_advance:
    /* Handle max ascent and descent if at the edges */
      {
         /* If it's the start, offset the line according to the max ascent. */
-        printf("Position: %d, maxasc=%d, asc=%d\n", c->position,
-              c->maxascent, c->ascent);
         if (((c->position == TEXTBLOCK_POSITION_START) ||
                  (c->position == TEXTBLOCK_POSITION_SINGLE))
               && (c->maxascent > c->ascent))
@@ -3905,9 +3903,7 @@ loop_advance:
              Evas_Coord ascdiff;
 
              ascdiff = c->maxascent - c->ascent;
-             printf(" -- ln->y=%d\n", c->ln->y);
              c->ln->y += ascdiff;
-             printf(" -- diff + ln->y=%d\n", c->ln->y);
              c->y += ascdiff;
              c->ln->y += c->c->o->style_pad.t;
              c->y += c->c->o->style_pad.t;
@@ -5324,7 +5320,7 @@ _layout_handle_ellipsis(Par_Ctxt *c, Evas_Object_Textblock_Item *it, Eina_List *
       TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
 
    //FIXME: for ellipsis cases
-   //_layout_line_finalize(c, ellip_ti->parent.format);
+   _layout_line_finalize(c, ellip_ti->parent.format);
 }
 
 /* Don't do much for the meanwhile. */
@@ -5596,24 +5592,24 @@ _layout_par(Par_Ctxt *cpar)
         it->x = cpar->x;
         if (it->type == EVAS_TEXTBLOCK_ITEM_TEXT)
           {
-             _layout_item_ascent_descent_adjust(c->evas_o, &c->ascent,
-                   &c->descent, it, it->format);
+             _layout_item_ascent_descent_adjust(c->evas_o, &cpar->ascent,
+                   &cpar->descent, it, it->format);
           }
         else
           {
              Evas_Object_Textblock_Format_Item *fi = _ITEM_FORMAT(it);
              if (fi->formatme)
                {
-                  prevdescent = c->descent;
-                  prevascent = c->ascent;
+                  prevdescent = cpar->descent;
+                  prevascent = cpar->ascent;
                   /* If there are no text items yet, calc ascent/descent
                    * according to the current format. */
-                  if (c->ascent + c->descent == 0)
-                     _layout_item_ascent_descent_adjust(c->evas_o, &c->ascent,
-                           &c->descent, it, it->format);
+                  if (cpar->ascent + cpar->descent == 0)
+                     _layout_item_ascent_descent_adjust(c->evas_o, &cpar->ascent,
+                           &cpar->descent, it, it->format);
 
-                  _layout_calculate_format_item_size(c->evas_o, fi, &c->ascent,
-                        &c->descent, &fi->y, &fi->parent.w, &fi->parent.h);
+                  _layout_calculate_format_item_size(c->evas_o, fi, &cpar->ascent,
+                        &cpar->descent, &fi->y, &fi->parent.w, &fi->parent.h);
                   fi->parent.adv = fi->parent.w;
                }
           }
@@ -5645,7 +5641,7 @@ _layout_par(Par_Ctxt *cpar)
                   _layout_item_ascent_descent_adjust(c->evas_o, &ascent, &descent,
                         it, it->format);
 
-                  if (c->position == TEXTBLOCK_POSITION_START)
+                  if (cpar->position == TEXTBLOCK_POSITION_START)
                      _layout_item_max_ascent_descent_calc(c->evas_o, &maxasc, &maxdesc,
                            it, TEXTBLOCK_POSITION_SINGLE);
                   else
@@ -5855,8 +5851,8 @@ _layout_par(Par_Ctxt *cpar)
 
                        /* We didn't end up using the item, so revert the ascent
                         * and descent changes. */
-                       c->descent = prevdescent;
-                       c->ascent = prevascent;
+                       cpar->descent = prevdescent;
+                       cpar->ascent = prevascent;
 
                        adv_line = 0;
                        redo_item = 1;
@@ -6550,6 +6546,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       int par_count = 1; /* Force it to take the first one */
       int par_index_pos = 0;
       int par_num = 0;
+      int ret = 0;
       Evas_Object_Textblock_Paragraph *first_par, *last_par;
 
       first_par = c->paragraphs;
@@ -6575,7 +6572,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                 Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
                 if (par == first_par)
                   {
-                     printf("first par!\n");
                      ctx->position = TEXTBLOCK_POSITION_START;
                   }
                 else
@@ -6583,22 +6579,24 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                      ctx->position = TEXTBLOCK_POSITION_ELSE;
                   }
 
-                int ret = _layout_par(ctx);
-                _layout_par_ctx_del(contexts, ctx);
+                ret = _layout_par(ctx);
 
                 // Update max width
                 if (ctx->wmax > c->wmax)
                    c->wmax = ctx->wmax;
+                
+                _layout_par_ctx_del(contexts, ctx);
 
-                if (ret)
-                  {
-                     last_vis_par = c->par;
-                     break;
-                  }
              }
 
            // FIXME: should be some ordered DS like rbtree
            c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
+
+           if (ret)
+             {
+                //last_vis_par = par;
+                break;
+             }
 
            /* FIXME: calculate line height, wmax, hmax, line numbering etc.
             * after all layouting of paragraphs were completed.
@@ -6614,20 +6612,21 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
         }
       // FIXME: wait for all paragraphs to finish
 
-      // FIXME: also a big fixme: can happen with ellipsis
-      /* Clear the rest of the paragraphs and mark as invisible */
-      if (c->par)
-        {
-           c->par = (Evas_Object_Textblock_Paragraph *)
-              EINA_INLIST_GET(c->par)->next;
-           while (c->par)
-             {
-                c->par->visible = 0;
-                _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
-                c->par = (Evas_Object_Textblock_Paragraph *)
-                   EINA_INLIST_GET(c->par)->next;
-             }
-        }
+      //// FIXME: also a big fixme: can happen with ellipsis
+      // XXX: moved to later (and a bit different)
+      ///* Clear the rest of the paragraphs and mark as invisible */
+      //if (c->par)
+      //  {
+      //     c->par = (Evas_Object_Textblock_Paragraph *)
+      //        EINA_INLIST_GET(c->par)->next;
+      //     while (c->par)
+      //       {
+      //          c->par->visible = 0;
+      //          _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
+      //          c->par = (Evas_Object_Textblock_Paragraph *)
+      //             EINA_INLIST_GET(c->par)->next;
+      //       }
+      //  }
 
       // FIXME: adjust heights of first and last lines (ascent/descent vs.
       // maxascent/descent)
@@ -6640,6 +6639,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            Evas_Object_Textblock_Line *ln;
            Evas_Object_Textblock_Paragraph *prev_par = NULL;
 
+           last_vis_par = eina_list_last(c->done_paragraphs)->data;
            // Get first paragraph, adjust its first line's ascent (if needed)
 
            // Update paragraphs' values
@@ -6680,6 +6680,21 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            c->position = TEXTBLOCK_POSITION_END;
            c->hmax = last_vis_par->y + last_vis_par->h +
               _layout_last_line_max_descent_adjust_calc(c, last_vis_par);
+        }
+
+      /* Clear the rest of the paragraphs and mark as invisible */
+      if (last_vis_par)
+        {
+           Evas_Object_Textblock_Paragraph *tmp_par;
+           tmp_par = (Evas_Object_Textblock_Paragraph *)
+              EINA_INLIST_GET(last_vis_par)->next;
+           while (tmp_par)
+             {
+                tmp_par->visible = 0;
+                _paragraph_clear(c->evas, c->o, c->evas_o, tmp_par);
+                tmp_par = (Evas_Object_Textblock_Paragraph *)
+                   EINA_INLIST_GET(tmp_par)->next;
+             }
         }
    }
 
