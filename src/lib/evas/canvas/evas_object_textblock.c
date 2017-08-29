@@ -6306,6 +6306,7 @@ _layout_par_is_dirty(Ctxt *c, Evas_Object_Textblock_Paragraph *par)
 {
    /* Skip this paragraph if width is the same, there is no ellipsis
     * and we aren't just calculating. */
+   if (!par->text_node) return 1;
    if (!par->text_node->is_new && !par->text_node->dirty &&
          !c->width_changed && par->lines &&
          !c->o->have_ellipsis && !c->o->obstacle_changed &&
@@ -6567,7 +6568,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            if (!c->par->logical_items) break;
 
            /* Break if we should stop here. */
-           if (par->text_node && _layout_par_is_dirty(c, par))
+           if (_layout_par_is_dirty(c, par))
              {
                 Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
                 if (par == first_par)
@@ -6581,13 +6582,18 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
                 ret = _layout_par(ctx);
 
-                // Update max width
-                if (ctx->wmax > c->wmax)
-                   c->wmax = ctx->wmax;
-                
+               // XXX: moved to few lines below (do it regardless with last_fw)
+               //// Update max width
+               // if (ctx->wmax > c->wmax)
+               //    c->wmax = ctx->wmax;
+
                 _layout_par_ctx_del(contexts, ctx);
 
              }
+
+           //XXX: moved from above
+           if (par->last_fw > c->wmax)
+              c->wmax = par->last_fw;
 
            // FIXME: should be some ordered DS like rbtree
            c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
