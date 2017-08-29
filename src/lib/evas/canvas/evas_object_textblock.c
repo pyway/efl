@@ -3973,15 +3973,15 @@ _layout_line_advance(Par_Ctxt *c, Evas_Object_Textblock_Format *fmt)
 {
    Evas_Object_Textblock_Format *last_fmt = fmt;
 
-   if (c->hyphen_ti)
+   if (c->c->hyphen_ti)
      {
         c->ln->items = (Evas_Object_Textblock_Item *)
            eina_inlist_append(EINA_INLIST_GET(c->ln->items),
-                 EINA_INLIST_GET(_ITEM(c->hyphen_ti)));
-        c->hyphen_ti->parent.ln = c->ln;
-        c->hyphen_items =
-           eina_list_append(c->hyphen_items, c->hyphen_ti);
-        c->hyphen_ti = NULL;
+                 EINA_INLIST_GET(_ITEM(c->c->hyphen_ti)));
+        c->c->hyphen_ti->parent.ln = c->ln;
+        c->c->o->hyphen_items =
+           eina_list_append(c->c->o->hyphen_items, c->c->hyphen_ti);
+        c->c->hyphen_ti = NULL;
      }
    if (c->ln->items)
      {
@@ -5923,7 +5923,7 @@ _layout_par(Par_Ctxt *cpar)
      {
         if (!EINA_INLIST_GET(par)->next)
           {
-             c->position = (c->position == TEXTBLOCK_POSITION_START) ?
+             cpar->position = (cpar->position == TEXTBLOCK_POSITION_START) ?
                 TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
           }
 
@@ -6322,18 +6322,18 @@ _layout_par_is_dirty(Ctxt *c, Evas_Object_Textblock_Paragraph *par)
 
         /* After this par we are no longer at the beginning, as there
          * must be some text in the par. */
-        if (!EINA_INLIST_GET(par)->next)
-          {
-             c->position = (c->position == TEXTBLOCK_POSITION_START) ?
-                TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
-          }
-        else
-          {
-             if (c->position == TEXTBLOCK_POSITION_START)
-                c->position = TEXTBLOCK_POSITION_ELSE;
-          }
+        //if (!EINA_INLIST_GET(par)->next)
+        //  {
+        //     c->position = (c->position == TEXTBLOCK_POSITION_START) ?
+        //        TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
+        //  }
+        //else
+        //  {
+        //     if (c->position == TEXTBLOCK_POSITION_START)
+        //        c->position = TEXTBLOCK_POSITION_ELSE;
+        //  }
 
-        if (par->last_fw > c->wmax) c->wmax = par->last_fw;
+        //if (par->last_fw > c->wmax) c->wmax = par->last_fw;
         return 0;
      }
    return 1;
