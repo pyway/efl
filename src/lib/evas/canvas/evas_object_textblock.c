@@ -2890,7 +2890,6 @@ struct _Par_Ctxt
 
    Eina_List *hyphen_items;
 
-   int wmax, hmax;
    int ascent, descent;
    int maxascent, maxdescent;
    int marginl, marginr;
@@ -3951,8 +3950,6 @@ loop_advance:
            c->marginl + c->marginr - (c->c->o->style_pad.l + c->c->o->style_pad.r);
         if (new_wmax > c->par->last_fw)
            c->par->last_fw = new_wmax;
-        if (new_wmax > c->wmax)
-           c->wmax = new_wmax;
      }
 
    c->c->y = c->y;
@@ -5505,8 +5502,6 @@ _layout_par(Par_Ctxt *cpar)
 
    /* Check if we need to skip this paragraph because it's already layouted
     * correctly, and mark handled nodes as dirty. */
-   // FIXME: do line numbering later
-   //par->line_no = c->line_no;
 
    if (par->text_node)
      {
@@ -6312,29 +6307,6 @@ _layout_par_is_dirty(Ctxt *c, Evas_Object_Textblock_Paragraph *par)
          !c->o->have_ellipsis && !c->o->obstacle_changed &&
          !c->o->wrap_changed)
      {
-        // FIXME: postpone line numbering for later
-        //
-        //Evas_Object_Textblock_Line *ln;
-        /* Update c->line_no */
-        //ln = (Evas_Object_Textblock_Line *)
-        //   EINA_INLIST_GET(par->lines)->last;
-        //if (ln)
-        //   c->c->line_no = par->line_no + ln->line_no + 1;
-
-        /* After this par we are no longer at the beginning, as there
-         * must be some text in the par. */
-        //if (!EINA_INLIST_GET(par)->next)
-        //  {
-        //     c->position = (c->position == TEXTBLOCK_POSITION_START) ?
-        //        TEXTBLOCK_POSITION_SINGLE : TEXTBLOCK_POSITION_END;
-        //  }
-        //else
-        //  {
-        //     if (c->position == TEXTBLOCK_POSITION_START)
-        //        c->position = TEXTBLOCK_POSITION_ELSE;
-        //  }
-
-        //if (par->last_fw > c->wmax) c->wmax = par->last_fw;
         return 0;
      }
    return 1;
@@ -6360,9 +6332,7 @@ _layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
      }
    if (ctx)
      {
-        //ctx->fmt = NULL;
         ctx->x = ctx->y = 0;
-        //ctx->h = h;
         //ctx->wmax = ctx->hmax = 0;
         ctx->ascent = ctx->descent = 0;
         ctx->maxascent = ctx->maxdescent = 0;
