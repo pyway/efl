@@ -3921,9 +3921,7 @@ loop_advance:
      {
         if (c->descent < 2) c->c->underline_extend = 2 - c->descent;
      }
-   // FIXME: move to after layout_par
-   //c->ln->line_no = c->line_no - c->ln->par->line_no;
-   //c->line_no++;
+   
    c->y += c->ascent + c->descent;
    if (c->c->w >= 0)
      {
@@ -6333,15 +6331,12 @@ _layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
    if (ctx)
      {
         ctx->x = ctx->y = 0;
-        //ctx->wmax = ctx->hmax = 0;
         ctx->ascent = ctx->descent = 0;
         ctx->maxascent = ctx->maxdescent = 0;
         ctx->marginl = ctx->marginr = 0;
-        //ctx->line_no = 0;
         ctx->align = 0.0;
         ctx->align_auto = EINA_TRUE;
         ctx->ln = NULL;
-        //ctx->obs_infos = NULL;
         ctx->hyphen_ti = NULL;
      }
    return ctx;
@@ -6361,34 +6356,6 @@ _layout_par_contexts_init(Par_Ctxt *contexts)
         contexts[i].idx = -1;
      }
 }
-
-//static Evas_Coord
-//_layout_par_horizontal_offset_get(Ctxt *c,
-//      Evas_Object_Textblock_Line *ln EINA_UNUSED,
-//      Evas_Object_Textblock_Item *it,
-//      Textblock_Position position)
-//{
-//   Evas_Coord asc = 0, desc = 0;
-//   Evas_Coord maxasc = 0, maxdesc = 0;
-//   Evas_Coord diff = 0;
-//
-//   _layout_item_ascent_descent_adjust(c->evas_o, &asc, &desc,
-//         it, it->format);
-//   _layout_item_max_ascent_descent_calc(c->evas_o, &maxasc, &maxdesc,
-//         it, position);
-//
-//   if (position == TEXTBLOCK_POSITION_START)
-//     {
-//        if (maxasc > asc) diff = (maxasc - asc);
-//     }
-//   else // FIXME: for single line
-//     {
-//        if (maxdesc > desc) diff = (maxdesc - desc);
-//     }
-//
-//   return diff;
-//}
-//      
 
 /**
  * @internal
@@ -6532,9 +6499,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       _layout_par_contexts_init(contexts);
       EINA_INLIST_FOREACH(c->paragraphs, par)
         {
-           // XXX: MOVED to later
-           //_layout_update_par(c);
-
            if (!c->par->logical_items) break;
 
            /* Break if we should stop here. */
@@ -6552,16 +6516,10 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
                 ret = _layout_par(ctx);
 
-               // XXX: moved to few lines below (do it regardless with last_fw)
-               //// Update max width
-               // if (ctx->wmax > c->wmax)
-               //    c->wmax = ctx->wmax;
-
                 _layout_par_ctx_del(contexts, ctx);
 
              }
 
-           //XXX: moved from above
            if (par->last_fw > c->wmax)
               c->wmax = par->last_fw;
 
@@ -6570,14 +6528,8 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
            if (ret)
              {
-                //last_vis_par = par;
                 break;
              }
-
-           /* FIXME: calculate line height, wmax, hmax, line numbering etc.
-            * after all layouting of paragraphs were completed.
-            * Each par_ctx should have its own wmax, so just walk
-            * on all those and get the maximum wmax. */
 
            if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
              {
@@ -6586,30 +6538,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                 o->par_index[par_index_pos++] = c->par;
              }
         }
-      // FIXME: wait for all paragraphs to finish
 
-      //// FIXME: also a big fixme: can happen with ellipsis
-      // XXX: moved to later (and a bit different)
-      ///* Clear the rest of the paragraphs and mark as invisible */
-      //if (c->par)
-      //  {
-      //     c->par = (Evas_Object_Textblock_Paragraph *)
-      //        EINA_INLIST_GET(c->par)->next;
-      //     while (c->par)
-      //       {
-      //          c->par->visible = 0;
-      //          _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
-      //          c->par = (Evas_Object_Textblock_Paragraph *)
-      //             EINA_INLIST_GET(c->par)->next;
-      //       }
-      //  }
-
-      // FIXME: adjust heights of first and last lines (ascent/descent vs.
-      // maxascent/descent)
-      // Something like:
-      // max_ascent_descent_adjust(first_par->lines, START)
-
-      // XXX: Updating y values for paragraphs and lines
       if (c->done_paragraphs)
         {
            Evas_Object_Textblock_Line *ln;
@@ -6644,7 +6573,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                 prev_par = par;
              }
         }
-      // max_ascent_descent_adjust(last_par->lines->last, END)
 
       /* Get the last visible paragraph in the layout */
       if (!last_vis_par && c->paragraphs)
