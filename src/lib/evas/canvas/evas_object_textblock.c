@@ -81,6 +81,8 @@
 #include "evas_filter.h"
 #include "efl_canvas_filter_internal.eo.h"
 
+#include "Ecore.h"
+
 /* private magic number for textblock objects */
 static const char o_type[] = "textblock";
 
@@ -2898,6 +2900,16 @@ struct _Par_Ctxt
    int x, y;
 };
 
+typedef struct _Async_Layout_Data Async_Layout_Data;
+
+struct _Async_Layout_Data
+{
+   Eo                   *obj;
+   Par_Ctxt             *c;
+   int ret;
+   int style_pad_l, style_pad_r, style_pad_t, style_pad_b;
+};
+
 static void _layout_text_add_logical_item(Ctxt *c, Evas_Object_Textblock_Paragraph *par, Evas_Object_Textblock_Text_Item *ti, Eina_List *rel);
 static void _text_item_update_sizes(Ctxt *c, Evas_Object_Textblock_Text_Item *ti);
 static Evas_Object_Textblock_Format_Item *_layout_do_format(const Evas_Object *obj EINA_UNUSED, Ctxt *c, Evas_Object_Textblock_Format **_fmt, Evas_Object_Textblock_Node_Format *n, int *style_pad_l, int *style_pad_r, int *style_pad_t, int *style_pad_b, Eina_Bool create_item);
@@ -2923,7 +2935,7 @@ _layout_format_ascent_descent_adjust(Evas_Object_Protected_Data *obj,
         descent = *maxdescent;
         if (fmt->linesize > 0)
           {
-             int scaled_linesize = fmt->linesize * obj->cur->scale;
+             int scaled_linesize = fmt->linesize * 1; // FIXME: originally was scale
              if ((ascent + descent) < scaled_linesize)
                {
                   ascent = ((scaled_linesize * ascent) / (ascent + descent));
@@ -2935,7 +2947,7 @@ _layout_format_ascent_descent_adjust(Evas_Object_Protected_Data *obj,
              descent = descent * fmt->linerelsize;
              ascent = ascent * fmt->linerelsize;
           }
-        descent += fmt->linegap * obj->cur->scale;
+        descent += fmt->linegap * 1; // FIXME: originally was scale
         descent += ((ascent + descent) * fmt->linerelgap);
         if (*maxascent < ascent) *maxascent = ascent;
         if (*maxdescent < descent) *maxdescent = descent;
@@ -6328,6 +6340,8 @@ _layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
              break;
           }
      }
+   printf("Created ctx: %p (c: %p)\n", ctx, c);
+   printf(" -- par=%p\n", par);
    if (ctx)
      {
         ctx->x = ctx->y = 0;
@@ -6357,6 +6371,38 @@ _layout_par_contexts_init(Par_Ctxt *contexts)
      }
 }
 
+static void
+_paragraph_layout_do(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
+{
+   Async_Layout_Data *todo = data;
+   printf("Doing! todo: %p, c->num = %d\n", data, todo->c->num);
+   Par_Ctxt *c = todo->c;
+   if (_layout_par_is_dirty(c->c, c->par))
+     {
+        todo->ret = _layout_par(todo->c);
+     }
+}
+
+static void
+_paragraph_layout_done(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
+{
+   printf("Done! todo: %p\n", data);
+   Async_Layout_Data *todo = data;
+   Par_Ctxt *c = todo->c;
+   // FIXME: should be some ordered DS like rbtree
+   c->c->done_paragraphs = eina_list_append(c->c->done_paragraphs, c->par);
+   if (c->par->last_fw > c->c->wmax)
+      c->c->wmax = c->par->last_fw;
+   // mark this ctx as free
+   c->idx = -1;
+}
+
+static void
+_paragraph_layout_cancel(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
+{
+   printf("Cancelled! todo: %p\n", data);
+   Async_Layout_Data *todo = data;
+}
 /**
  * @internal
  * Create the layout from the nodes.
@@ -6486,6 +6532,8 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       int par_num = 0;
       int ret = 0;
       Evas_Object_Textblock_Paragraph *first_par, *last_par;
+      Eina_List *jobs = NULL;
+      Ecore_Thread *job;
 
       first_par = c->paragraphs;
       last_par = (Evas_Object_Textblock_Paragraph *)
@@ -6504,7 +6552,9 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
            /* Break if we should stop here. */
            if (_layout_par_is_dirty(c, par))
              {
-                Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num);
+                Async_Layout_Data *todo;
+                todo = calloc(1, sizeof(*todo));
+                Par_Ctxt *ctx = _layout_par_ctx_get(contexts, par, c, par_num++);
                 if (par == first_par)
                   {
                      ctx->position = TEXTBLOCK_POSITION_START;
@@ -6513,32 +6563,59 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                   {
                      ctx->position = TEXTBLOCK_POSITION_ELSE;
                   }
+                if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
+                  {
+                     par_count = par_index_step;
 
-                ret = _layout_par(ctx);
+                     o->par_index[par_index_pos++] = par;
+                  }
 
-                _layout_par_ctx_del(contexts, ctx);
+                todo->c = ctx;
+                printf("creating todo: ctx=%p (num=%d), c->par=%p\n",
+                      ctx, ctx->num, c->par);
+                job = ecore_thread_run(_paragraph_layout_do,
+                      _paragraph_layout_done,
+                      _paragraph_layout_cancel,
+                      todo);
+                //ret = _layout_par(ctx);
+                jobs = eina_list_append(jobs, job);
 
+                //_layout_par_ctx_del(contexts, ctx);
              }
 
-           if (par->last_fw > c->wmax)
-              c->wmax = par->last_fw;
+           if (eina_list_count(jobs) > 3)
+             {
+                EINA_LIST_FREE(jobs, job)
+                  {
+                     ecore_thread_wait(job, 1.0);
+                  }
+             }
+
+           //if (par->last_fw > c->wmax)
+           //   c->wmax = par->last_fw;
 
            // FIXME: should be some ordered DS like rbtree
-           c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
+           //c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
 
-           if (ret)
-             {
-                break;
-             }
+//           if (ret)
+//             {
+//                break;
+//             }
 
-           if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
-             {
-                par_count = par_index_step;
-
-                o->par_index[par_index_pos++] = c->par;
-             }
+           // Moved up
+//           if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
+//             {
+//                par_count = par_index_step;
+//
+//                o->par_index[par_index_pos++] = c->par;
+//             }
         }
 
+      EINA_LIST_FREE(jobs, job)
+        {
+           ecore_thread_wait(job, 1.0);
+        }
+      
       if (c->done_paragraphs)
         {
            Evas_Object_Textblock_Line *ln;
