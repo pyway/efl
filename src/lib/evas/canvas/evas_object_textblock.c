@@ -6563,10 +6563,12 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       int par_count = 1; /* Force it to take the first one */
       int par_index_pos = 0;
       int par_num = 0;
-      int ret = 0;
       Evas_Object_Textblock_Paragraph *first_par, *last_par;
+#define NOTHREAD
+#ifndef NOTHREAD
       Eina_List *jobs = NULL;
       Ecore_Thread *job;
+#endif
 
       first_par = c->paragraphs;
       last_par = (Evas_Object_Textblock_Paragraph *)
@@ -6604,48 +6606,37 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                   }
 
                 todo->c = ctx;
+#ifdef NOTHREAD
+                _paragraph_layout_do(todo, NULL);
+                _paragraph_layout_done(todo, NULL);
+#else
                 job = ecore_thread_run(_paragraph_layout_do,
                       _paragraph_layout_done,
                       _paragraph_layout_cancel,
                       todo);
-                //ret = _layout_par(ctx);
                 jobs = eina_list_append(jobs, job);
-
-                //_layout_par_ctx_del(contexts, ctx);
+#endif
              }
 
-           if (eina_list_count(jobs) > 3)
+#ifndef NOTHREAD
+           if (eina_list_count(jobs) > 0)
              {
                 EINA_LIST_FREE(jobs, job)
                   {
-                     ecore_thread_wait(job, 0.05);
+                     ecore_thread_wait(job, 2);
                   }
              }
+#endif
 
-           //if (par->last_fw > c->wmax)
-           //   c->wmax = par->last_fw;
-
-           // FIXME: should be some ordered DS like rbtree
-           //c->done_paragraphs = eina_list_append(c->done_paragraphs, par);
-
-//           if (ret)
-//             {
-//                break;
-//             }
-
-           // Moved up
-//           if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
-//             {
-//                par_count = par_index_step;
-//
-//                o->par_index[par_index_pos++] = c->par;
-//             }
         }
 
+#ifndef NOTHREAD
       EINA_LIST_FREE(jobs, job)
         {
-           ecore_thread_wait(job, 0.05);
+           ecore_thread_wait(job, 2);
         }
+#endif
+#undef NOTHREAD
       
       if (c->done_paragraphs)
         {
@@ -6655,7 +6646,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
            done = eina_list_last(c->done_paragraphs)->data;
            last_vis_par = done->par;
-           // Get first paragraph, adjust its first line's ascent (if needed)
 
            // Update paragraphs' values
            int total_line_no = 0;
