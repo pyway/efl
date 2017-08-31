@@ -4792,21 +4792,21 @@ _layout_do_format(const Evas_Object *obj, Ctxt *c,
    return fi;
 }
 
-static void
-_layout_update_par(Ctxt *c)
-{
-   Evas_Object_Textblock_Paragraph *last_par;
-   last_par = (Evas_Object_Textblock_Paragraph *)
-      EINA_INLIST_GET(c->par)->prev;
-   if (last_par)
-     {
-        c->par->y = last_par->y + last_par->h;
-     }
-   else
-     {
-        c->par->y = 0;
-     }
-}
+//static void
+//_layout_update_par(Ctxt *c)
+//{
+//   Evas_Object_Textblock_Paragraph *last_par;
+//   last_par = (Evas_Object_Textblock_Paragraph *)
+//      EINA_INLIST_GET(c->par)->prev;
+//   if (last_par)
+//     {
+//        c->par->y = last_par->y + last_par->h;
+//     }
+//   else
+//     {
+//        c->par->y = 0;
+//     }
+//}
 
 /* -1 means no wrap */
 static int
@@ -6363,12 +6363,6 @@ _layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
 }
 
 static void
-_layout_par_ctx_del(Par_Ctxt *contexts EINA_UNUSED, Par_Ctxt *ctx)
-{
-   ctx->idx = -1;
-}
-
-static void
 _layout_par_contexts_init(Par_Ctxt *contexts)
 {
    for (int i = 0; i < PAR_CTXS_SIZE; i++)
@@ -6563,7 +6557,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
       int par_count = 1; /* Force it to take the first one */
       int par_index_pos = 0;
       int par_num = 0;
-      Evas_Object_Textblock_Paragraph *first_par, *last_par;
+      Evas_Object_Textblock_Paragraph *first_par;
 #define NOTHREAD
 #ifndef NOTHREAD
       Eina_List *jobs = NULL;
@@ -6571,8 +6565,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 #endif
 
       first_par = c->paragraphs;
-      last_par = (Evas_Object_Textblock_Paragraph *)
-         EINA_INLIST_GET(c->paragraphs)->last;
 
       if (par_index_step == 0) par_index_step = 1;
 
