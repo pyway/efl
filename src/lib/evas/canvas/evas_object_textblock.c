@@ -507,6 +507,7 @@ struct _Efl_Canvas_Text_Filter_Program
 struct _Evas_Object_Textblock_Format
 {
    Evas_Object_Textblock_Node_Format *fnode;  /**< Pointer to textblock format node. */
+   Eina_Lock            lk;
    double               halign;  /**< Horizontal alignment value. */
    double               valign;  /**< Vertical alignment value. */
    struct {
@@ -982,7 +983,9 @@ static void
 _format_unref_free(Evas_Object_Protected_Data *evas_o, Evas_Object_Textblock_Format *fmt)
 {
    Evas_Object_Protected_Data *obj = evas_o;
+   eina_lock_take(&fmt->lk);
    fmt->ref--;
+   eina_lock_release(&fmt->lk);
    if (fmt->ref > 0) return;
    if (fmt->font.fdesc) evas_font_desc_unref(fmt->font.fdesc);
    if (fmt->font.source) eina_stringshare_del(fmt->font.source);
@@ -2803,6 +2806,7 @@ _format_dup(Evas_Object *eo_obj, const Evas_Object_Textblock_Format *fmt)
    fmt2 = calloc(1, sizeof(Evas_Object_Textblock_Format));
    memcpy(fmt2, fmt, sizeof(Evas_Object_Textblock_Format));
    fmt2->ref = 1;
+   LKI(fmt2->lk);
    if (fmt->font.fdesc) fmt2->font.fdesc = evas_font_desc_ref(fmt->font.fdesc);
 
    if (fmt->font.source) fmt2->font.source = eina_stringshare_add(fmt->font.source);
@@ -3379,6 +3383,7 @@ _layout_format_push(Ctxt *c, Evas_Object_Textblock_Format *fmt,
         c->format_stack  = eina_list_prepend(c->format_stack, fmt);
         *fmt = c->o->default_format.format;
         fmt->ref = 1;
+        LKI(fmt->lk);
 
         // Apply font if specified
         if (_FMT_INFO(font))
@@ -4013,7 +4018,9 @@ _layout_text_item_new(Evas_Object_Textblock_Format *fmt)
 
    ti = calloc(1, sizeof(Evas_Object_Textblock_Text_Item));
    ti->parent.format = fmt;
+   eina_lock_take(&ti->parent.format->lk);
    ti->parent.format->ref++;
+   eina_lock_release(&ti->parent.format->lk);
    ti->parent.type = EVAS_TEXTBLOCK_ITEM_TEXT;
    return ti;
 }
@@ -4472,6 +4479,7 @@ _layout_format_item_add(Ctxt *c, Evas_Object_Textblock_Node_Format *n, const cha
    fi->parent.type = EVAS_TEXTBLOCK_ITEM_FORMAT;
    fi->parent.format = fmt;
    fi->parent.format->ref++;
+   LKI(fmt->lk);
    c->par->logical_items = eina_list_append(c->par->logical_items, fi);
    if (n)
      {
