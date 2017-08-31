@@ -6348,8 +6348,6 @@ _layout_par_ctx_get(Par_Ctxt *contexts, Evas_Object_Textblock_Paragraph *par,
              break;
           }
      }
-   printf("Created ctx: %p (c: %p)\n", ctx, c);
-   printf(" -- par=%p\n", par);
    if (ctx)
      {
         ctx->x = ctx->y = 0;
@@ -6383,7 +6381,6 @@ static void
 _paragraph_layout_do(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
 {
    Async_Layout_Data *todo = data;
-   printf("Doing! todo: %p, c->num = %d\n", data, todo->c->num);
    Par_Ctxt *c = todo->c;
    if (_layout_par_is_dirty(c->c, c->par))
      {
@@ -6391,18 +6388,45 @@ _paragraph_layout_do(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
      }
 }
 
+typedef struct _Paragraph_Done Paragraph_Done;
+
+struct _Paragraph_Done
+{
+   int num;
+   Evas_Object_Textblock_Paragraph *par;
+};
+
 static void
 _paragraph_layout_done(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSED)
 {
-   printf("Done! todo: %p\n", data);
    Async_Layout_Data *todo = data;
    Par_Ctxt *c = todo->c;
-   // FIXME: should be some ordered DS like rbtree
-   c->c->done_paragraphs = eina_list_append(c->c->done_paragraphs, c->par);
+   Eina_List *i;
+   Paragraph_Done *done, *itr;
+
+   // Insertion by paragraph order
+   done = calloc(1, sizeof(*done));
+   done->num = todo->c->num;
+   done->par = c->par;
+   EINA_LIST_FOREACH(c->c->done_paragraphs, i, itr)
+      {
+         if (done->num < itr->num) break;
+      }
+   if (!i)
+     {
+        c->c->done_paragraphs = eina_list_append(c->c->done_paragraphs, done);
+     }
+   else
+     {
+        c->c->done_paragraphs =
+           eina_list_prepend_relative_list(c->c->done_paragraphs, done, i);
+     }
+
    if (c->par->last_fw > c->c->wmax)
       c->c->wmax = c->par->last_fw;
    // mark this ctx as free
    c->idx = -1;
+   free(todo);
 }
 
 static void
@@ -6410,6 +6434,7 @@ _paragraph_layout_cancel(void *data EINA_UNUSED, Ecore_Thread *thread EINA_UNUSE
 {
    printf("Cancelled! todo: %p\n", data);
    Async_Layout_Data *todo = data;
+   free(todo);
 }
 /**
  * @internal
@@ -6579,8 +6604,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                   }
 
                 todo->c = ctx;
-                printf("creating todo: ctx=%p (num=%d), c->par=%p\n",
-                      ctx, ctx->num, c->par);
                 job = ecore_thread_run(_paragraph_layout_do,
                       _paragraph_layout_done,
                       _paragraph_layout_cancel,
@@ -6595,7 +6618,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
              {
                 EINA_LIST_FREE(jobs, job)
                   {
-                     ecore_thread_wait(job, 1.0);
+                     ecore_thread_wait(job, 0.05);
                   }
              }
 
@@ -6621,24 +6644,29 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 
       EINA_LIST_FREE(jobs, job)
         {
-           ecore_thread_wait(job, 1.0);
+           ecore_thread_wait(job, 0.05);
         }
       
       if (c->done_paragraphs)
         {
            Evas_Object_Textblock_Line *ln;
            Evas_Object_Textblock_Paragraph *prev_par = NULL;
+           Paragraph_Done *done;
 
-           last_vis_par = eina_list_last(c->done_paragraphs)->data;
+           done = eina_list_last(c->done_paragraphs)->data;
+           last_vis_par = done->par;
            // Get first paragraph, adjust its first line's ascent (if needed)
 
            // Update paragraphs' values
            int total_line_no = 0;
-           EINA_LIST_FREE(c->done_paragraphs, par)
+           EINA_LIST_FREE(c->done_paragraphs, done)
              {
                 Evas_Coord prev_y = 0, prev_h = 0;
                 Evas_Coord lny;
                 int line_no = 0;
+
+                par = done->par;
+
                 if (prev_par)
                   {
                      prev_y = prev_par->y;
@@ -6656,6 +6684,8 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
                      lny += ln->h;
                   }
                 prev_par = par;
+
+                free(done);
              }
         }
 
