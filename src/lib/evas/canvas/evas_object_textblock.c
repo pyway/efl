@@ -6300,6 +6300,136 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
      }
 }
 
+static void
+_layout_do(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
+      int *style_pad_b)
+{
+   /* Start of logical layout creation */
+   /* setup default base style */
+     {
+        Eina_List *itr;
+        Evas_Textblock_Style *style;
+        Eina_Bool finalize = EINA_FALSE;
+        if (!c->fmt)
+          {
+             c->fmt = _layout_format_push(c, NULL, NULL);
+             finalize = EINA_TRUE;
+          }
+        if ((c->o->style) && (c->o->style->default_tag))
+          {
+             _format_fill(c->obj, c->fmt, c->o->style->default_tag);
+             finalize = EINA_TRUE;
+          }
+
+        EINA_LIST_FOREACH(c->o->styles, itr, style)
+          {
+             if ((style) && (style->default_tag))
+               {
+                  _format_fill(c->obj, c->fmt, style->default_tag);
+                  finalize = EINA_TRUE;
+               }
+          }
+
+        if (finalize)
+           _format_finalize(c->obj, c->fmt);
+     }
+   if (!c->fmt)
+     {
+        return;
+     }
+
+   _layout_pre(c, style_pad_l, style_pad_r, style_pad_t, style_pad_b);
+   c->paragraphs = c->o->paragraphs;
+
+   /* If there are no paragraphs, create the minimum needed,
+    * if the last paragraph has no lines/text, create that as well */
+   if (!c->paragraphs)
+     {
+        _layout_paragraph_new(c, NULL, EINA_TRUE);
+        c->o->paragraphs = c->paragraphs;
+     }
+   c->par = (Evas_Object_Textblock_Paragraph *)
+      EINA_INLIST_GET(c->paragraphs)->last;
+   if (!c->par->logical_items)
+     {
+        Evas_Object_Textblock_Text_Item *ti;
+        ti = _layout_text_item_new(c, c->fmt);
+        ti->parent.text_node = c->par->text_node;
+        ti->parent.text_pos = 0;
+        _layout_text_add_logical_item(c, ti, NULL);
+     }
+
+   /* End of logical layout creation */
+
+   /* Start of visual layout creation */
+   {
+      Evas_Object_Textblock_Paragraph *last_vis_par = NULL;
+      int par_index_step = c->o->num_paragraphs / TEXTBLOCK_PAR_INDEX_SIZE;
+      int par_count = 1; /* Force it to take the first one */
+      int par_index_pos = 0;
+
+      c->position = TEXTBLOCK_POSITION_START;
+
+      if (par_index_step == 0) par_index_step = 1;
+
+      /* Clear all of the index */
+      memset(c->o->par_index, 0, sizeof(c->o->par_index));
+
+      EINA_INLIST_FOREACH(c->paragraphs, c->par)
+        {
+           _layout_update_par(c);
+
+           /* Break if we should stop here. */
+           if (_layout_par(c))
+             {
+                last_vis_par = c->par;
+                break;
+             }
+
+           if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
+             {
+                par_count = par_index_step;
+
+                c->o->par_index[par_index_pos++] = c->par;
+             }
+        }
+
+      /* Clear the rest of the paragraphs and mark as invisible */
+      if (c->par)
+        {
+           c->par = (Evas_Object_Textblock_Paragraph *)
+              EINA_INLIST_GET(c->par)->next;
+           while (c->par)
+             {
+                c->par->visible = 0;
+                _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
+                c->par = (Evas_Object_Textblock_Paragraph *)
+                   EINA_INLIST_GET(c->par)->next;
+             }
+        }
+
+      /* Get the last visible paragraph in the layout */
+      if (!last_vis_par && c->paragraphs)
+         last_vis_par = (Evas_Object_Textblock_Paragraph *)
+            EINA_INLIST_GET(c->paragraphs)->last;
+
+      if (last_vis_par)
+        {
+           c->hmax = last_vis_par->y + last_vis_par->h +
+              _layout_last_line_max_descent_adjust_calc(c, last_vis_par);
+        }
+   }
+
+   /* Clean the rest of the format stack */
+   while (c->format_stack)
+     {
+        c->fmt = c->format_stack->data;
+        c->format_stack = eina_list_remove_list(c->format_stack, c->format_stack);
+        _format_unref_free(c->evas_o, c->fmt);
+     }
+
+}
+
 /**
  * @internal
  * Create the layout from the nodes.
@@ -6358,131 +6488,7 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    eo_e = evas_object_evas_get(eo_obj);
    c->evas = efl_data_scope_get(eo_e, EVAS_CANVAS_CLASS);
 
-   /* Start of logical layout creation */
-   /* setup default base style */
-     {
-        Eina_List *itr;
-        Evas_Textblock_Style *style;
-        Eina_Bool finalize = EINA_FALSE;
-        if (!c->fmt)
-          {
-             c->fmt = _layout_format_push(c, NULL, NULL);
-             finalize = EINA_TRUE;
-          }
-        if ((c->o->style) && (c->o->style->default_tag))
-          {
-             _format_fill(c->obj, c->fmt, c->o->style->default_tag);
-             finalize = EINA_TRUE;
-          }
-
-        EINA_LIST_FOREACH(c->o->styles, itr, style)
-          {
-             if ((style) && (style->default_tag))
-               {
-                  _format_fill(c->obj, c->fmt, style->default_tag);
-                  finalize = EINA_TRUE;
-               }
-          }
-
-        if (finalize)
-           _format_finalize(c->obj, c->fmt);
-     }
-   if (!c->fmt)
-     {
-        if (w_ret) *w_ret = 0;
-        if (h_ret) *h_ret = 0;
-        return;
-     }
-
-   _layout_pre(c, &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
-   c->paragraphs = o->paragraphs;
-
-   /* If there are no paragraphs, create the minimum needed,
-    * if the last paragraph has no lines/text, create that as well */
-   if (!c->paragraphs)
-     {
-        _layout_paragraph_new(c, NULL, EINA_TRUE);
-        o->paragraphs = c->paragraphs;
-     }
-   c->par = (Evas_Object_Textblock_Paragraph *)
-      EINA_INLIST_GET(c->paragraphs)->last;
-   if (!c->par->logical_items)
-     {
-        Evas_Object_Textblock_Text_Item *ti;
-        ti = _layout_text_item_new(c, c->fmt);
-        ti->parent.text_node = c->par->text_node;
-        ti->parent.text_pos = 0;
-        _layout_text_add_logical_item(c, ti, NULL);
-     }
-
-   /* End of logical layout creation */
-
-   /* Start of visual layout creation */
-   {
-      Evas_Object_Textblock_Paragraph *last_vis_par = NULL;
-      int par_index_step = o->num_paragraphs / TEXTBLOCK_PAR_INDEX_SIZE;
-      int par_count = 1; /* Force it to take the first one */
-      int par_index_pos = 0;
-
-      c->position = TEXTBLOCK_POSITION_START;
-
-      if (par_index_step == 0) par_index_step = 1;
-
-      /* Clear all of the index */
-      memset(o->par_index, 0, sizeof(o->par_index));
-
-      EINA_INLIST_FOREACH(c->paragraphs, c->par)
-        {
-           _layout_update_par(c);
-
-           /* Break if we should stop here. */
-           if (_layout_par(c))
-             {
-                last_vis_par = c->par;
-                break;
-             }
-
-           if ((par_index_pos < TEXTBLOCK_PAR_INDEX_SIZE) && (--par_count == 0))
-             {
-                par_count = par_index_step;
-
-                o->par_index[par_index_pos++] = c->par;
-             }
-        }
-
-      /* Clear the rest of the paragraphs and mark as invisible */
-      if (c->par)
-        {
-           c->par = (Evas_Object_Textblock_Paragraph *)
-              EINA_INLIST_GET(c->par)->next;
-           while (c->par)
-             {
-                c->par->visible = 0;
-                _paragraph_clear(c->evas, c->o, c->evas_o, c->par);
-                c->par = (Evas_Object_Textblock_Paragraph *)
-                   EINA_INLIST_GET(c->par)->next;
-             }
-        }
-
-      /* Get the last visible paragraph in the layout */
-      if (!last_vis_par && c->paragraphs)
-         last_vis_par = (Evas_Object_Textblock_Paragraph *)
-            EINA_INLIST_GET(c->paragraphs)->last;
-
-      if (last_vis_par)
-        {
-           c->hmax = last_vis_par->y + last_vis_par->h +
-              _layout_last_line_max_descent_adjust_calc(c, last_vis_par);
-        }
-   }
-
-   /* Clean the rest of the format stack */
-   while (c->format_stack)
-     {
-        c->fmt = c->format_stack->data;
-        c->format_stack = eina_list_remove_list(c->format_stack, c->format_stack);
-        _format_unref_free(c->evas_o, c->fmt);
-     }
+   _layout_do(c, &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
 
    if (w_ret) *w_ret = c->wmax;
    if (h_ret) *h_ret = c->hmax;
