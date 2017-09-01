@@ -6335,7 +6335,7 @@ _layout_do(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
      }
    if (!c->fmt)
      {
-        return;
+        goto end;
      }
 
    _layout_pre(c, style_pad_l, style_pad_r, style_pad_t, style_pad_b);
@@ -6428,31 +6428,63 @@ _layout_do(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
         _format_unref_free(c->evas_o, c->fmt);
      }
 
+end:
+   c->o->obstacle_changed = EINA_FALSE;
 }
 
-/**
- * @internal
- * Create the layout from the nodes.
- *
- * @param obj the evas object - NOT NULL.
- * @param calc_only true if should only calc sizes false if should also create the layout.. It assumes native size is being calculated, doesn't support formatted size atm.
- * @param w the object's w, -1 means no wrapping (i.e infinite size)
- * @param h the object's h, -1 means inifinte size.
- * @param w_ret the object's calculated w.
- * @param h_ret the object's calculated h.
- */
+static void _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret);
+
 static void
-_layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
+_layout_done(Ctxt *c, Evas_Coord *w_ret, Evas_Coord *h_ret,
+      int *style_pad_l, int *style_pad_r, int *style_pad_t,
+      int *style_pad_b)
 {
+   if (w_ret) *w_ret = c->wmax;
+   if (h_ret) *h_ret = c->hmax;
+
+   /* Vertically align the textblock */
+   if ((c->o->valign > 0.0) && (c->h > c->hmax))
+     {
+        Evas_Coord adjustment = (c->h - c->hmax) * c->o->valign;
+        Evas_Object_Textblock_Paragraph *par;
+        EINA_INLIST_FOREACH(c->paragraphs, par)
+          {
+             par->y += adjustment;
+          }
+     }
+
+   if ((c->o->style_pad.l != *style_pad_l) || (c->o->style_pad.r != *style_pad_r) ||
+       (c->o->style_pad.t != *style_pad_t) || (c->o->style_pad.b != *style_pad_b))
+     {
+        Evas_Coord w, h;
+        Eo *eo_obj = c->obj;
+        w = c->w;
+        h = c->h;
+        c->o->style_pad.l = *style_pad_l;
+        c->o->style_pad.r = *style_pad_r;
+        c->o->style_pad.t = *style_pad_t;
+        c->o->style_pad.b = *style_pad_b;
+        _paragraphs_clear(c);
+        LYDBG("ZZ: ... layout #2\n");
+        if (c) free(c);
+        c = NULL;
+        _layout(eo_obj, w, h, w_ret, h_ret);
+        efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_STYLE_INSETS_CHANGED, NULL);
+     }
+
+   //TODO: mark that layout is completed (e.g. for async)
+   if (c) free(c);
+   c = NULL;
+
+}
+
+static void
+_ctxt_init(Ctxt *c, const Evas_Object *eo_obj, Evas_Coord w, Evas_Coord h)
+{
+   Evas *eo_e;
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
-   Ctxt ctxt, *c;
-   Evas *eo_e;
-   int style_pad_l = 0, style_pad_r = 0, style_pad_t = 0, style_pad_b = 0;
 
-   LYDBG("ZZ: layout %p %4ix%4i | w=%4i | last_w=%4i --- '%s'\n", eo_obj, w, h, obj->cur->geometry.w, o->last_w, o->markup_text);
-   /* setup context */
-   c = &ctxt;
    c->obj = (Evas_Object *)eo_obj;
    c->o = o;
    c->paragraphs = c->par = NULL;
@@ -6477,7 +6509,6 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    c->hyphen_ti = NULL;
    c->handle_obstacles = EINA_FALSE;
 
-   /* Update all obstacles */
    if (c->o->obstacle_changed || c->width_changed)
      {
         _layout_obstacles_update(c);
@@ -6487,37 +6518,37 @@ _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
    c->evas_o = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    eo_e = evas_object_evas_get(eo_obj);
    c->evas = efl_data_scope_get(eo_e, EVAS_CANVAS_CLASS);
+}
 
+/**
+ * @internal
+ * Create the layout from the nodes.
+ *
+ * @param obj the evas object - NOT NULL.
+ * @param calc_only true if should only calc sizes false if should also create the layout.. It assumes native size is being calculated, doesn't support formatted size atm.
+ * @param w the object's w, -1 means no wrapping (i.e infinite size)
+ * @param h the object's h, -1 means inifinte size.
+ * @param w_ret the object's calculated w.
+ * @param h_ret the object's calculated h.
+ */
+static void
+_layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
+{
+   //Ctxt ctxt;
+   Ctxt *c = NULL;
+   int style_pad_l = 0, style_pad_r = 0, style_pad_t = 0, style_pad_b = 0;
+
+   LYDBG("ZZ: layout %p %4ix%4i | w=%4i | last_w=%4i --- '%s'\n", eo_obj, w, h, obj->cur->geometry.w, o->last_w, o->markup_text);
+   /* setup context */
+   //c = &ctxt;
+   /* Update all obstacles */
+
+   c = calloc(1, sizeof(*c));
+   _ctxt_init(c, eo_obj, w, h);
    _layout_do(c, &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
+   _layout_done(c, w_ret, h_ret,
+         &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
 
-   if (w_ret) *w_ret = c->wmax;
-   if (h_ret) *h_ret = c->hmax;
-
-   /* Vertically align the textblock */
-   if ((o->valign > 0.0) && (c->h > c->hmax))
-     {
-        Evas_Coord adjustment = (c->h - c->hmax) * o->valign;
-        Evas_Object_Textblock_Paragraph *par;
-        EINA_INLIST_FOREACH(c->paragraphs, par)
-          {
-             par->y += adjustment;
-          }
-     }
-
-   if ((o->style_pad.l != style_pad_l) || (o->style_pad.r != style_pad_r) ||
-       (o->style_pad.t != style_pad_t) || (o->style_pad.b != style_pad_b))
-     {
-        o->style_pad.l = style_pad_l;
-        o->style_pad.r = style_pad_r;
-        o->style_pad.t = style_pad_t;
-        o->style_pad.b = style_pad_b;
-        _paragraphs_clear(c);
-        LYDBG("ZZ: ... layout #2\n");
-        _layout(eo_obj, w, h, w_ret, h_ret);
-        efl_event_callback_call((Eo *) eo_obj, EFL_CANVAS_TEXT_EVENT_STYLE_INSETS_CHANGED, NULL);
-     }
-
-   c->o->obstacle_changed = EINA_FALSE;
 }
 
 /*
