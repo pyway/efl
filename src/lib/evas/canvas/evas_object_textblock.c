@@ -81,6 +81,8 @@
 #include "evas_filter.h"
 #include "efl_canvas_filter_internal.eo.h"
 
+#include "Ecore.h"
+
 /* private magic number for textblock objects */
 static const char o_type[] = "textblock";
 
@@ -581,6 +583,7 @@ struct _Efl_Text_Annotate_Annotation
 #define TEXTBLOCK_PAR_INDEX_SIZE 10
 struct _Evas_Object_Textblock
 {
+   LK(lk);
    Evas_Textblock_Style               *style;
    Eina_List                          *styles;
    Efl_Text_Cursor_Cursor        *cursor;
@@ -649,6 +652,9 @@ struct _Evas_Object_Textblock
    Eina_Bool                           changed_paragraph_direction : 1;
    Eina_Bool                           multiline : 1;
    Eina_Bool                           wrap_changed : 1;
+   Eina_Bool                           async_req : 1;
+   Eina_Bool                           async_do : 1;
+   Eina_Bool                           async_fail_force_redo : 1;
 };
 
 struct _Evas_Textblock_Selection_Iterator
@@ -3347,7 +3353,7 @@ _layout_format_push(Ctxt *c, Evas_Object_Textblock_Format *fmt,
         // Apply font if specified
         if (_FMT_INFO(font))
           {
-             Evas_Object_Protected_Data *evas_obj = efl_data_scope_get(c->obj, EFL_CANVAS_OBJECT_CLASS);
+             Evas_Object_Protected_Data *evas_obj = c->evas_o;
 
              if (fmt->font.fdesc)
                {
@@ -6301,66 +6307,8 @@ _layout_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
 }
 
 static void
-_layout_do(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
-      int *style_pad_b)
+_layout_do_visual(Ctxt *c)
 {
-   /* Start of logical layout creation */
-   /* setup default base style */
-     {
-        Eina_List *itr;
-        Evas_Textblock_Style *style;
-        Eina_Bool finalize = EINA_FALSE;
-        if (!c->fmt)
-          {
-             c->fmt = _layout_format_push(c, NULL, NULL);
-             finalize = EINA_TRUE;
-          }
-        if ((c->o->style) && (c->o->style->default_tag))
-          {
-             _format_fill(c->obj, c->fmt, c->o->style->default_tag);
-             finalize = EINA_TRUE;
-          }
-
-        EINA_LIST_FOREACH(c->o->styles, itr, style)
-          {
-             if ((style) && (style->default_tag))
-               {
-                  _format_fill(c->obj, c->fmt, style->default_tag);
-                  finalize = EINA_TRUE;
-               }
-          }
-
-        if (finalize)
-           _format_finalize(c->obj, c->fmt);
-     }
-   if (!c->fmt)
-     {
-        goto end;
-     }
-
-   _layout_pre(c, style_pad_l, style_pad_r, style_pad_t, style_pad_b);
-   c->paragraphs = c->o->paragraphs;
-
-   /* If there are no paragraphs, create the minimum needed,
-    * if the last paragraph has no lines/text, create that as well */
-   if (!c->paragraphs)
-     {
-        _layout_paragraph_new(c, NULL, EINA_TRUE);
-        c->o->paragraphs = c->paragraphs;
-     }
-   c->par = (Evas_Object_Textblock_Paragraph *)
-      EINA_INLIST_GET(c->paragraphs)->last;
-   if (!c->par->logical_items)
-     {
-        Evas_Object_Textblock_Text_Item *ti;
-        ti = _layout_text_item_new(c, c->fmt);
-        ti->parent.text_node = c->par->text_node;
-        ti->parent.text_pos = 0;
-        _layout_text_add_logical_item(c, ti, NULL);
-     }
-
-   /* End of logical layout creation */
-
    /* Start of visual layout creation */
    {
       Evas_Object_Textblock_Paragraph *last_vis_par = NULL;
@@ -6420,6 +6368,85 @@ _layout_do(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
         }
    }
 
+}
+
+static void
+_layout_do_pre(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
+      int *style_pad_b)
+{
+   /* Start of logical layout creation */
+   /* setup default base style */
+     {
+        Eina_List *itr;
+        Evas_Textblock_Style *style;
+        Eina_Bool finalize = EINA_FALSE;
+        if (!c->fmt)
+          {
+             c->fmt = _layout_format_push(c, NULL, NULL);
+             finalize = EINA_TRUE;
+          }
+        if ((c->o->style) && (c->o->style->default_tag))
+          {
+             _format_fill(c->obj, c->fmt, c->o->style->default_tag);
+             finalize = EINA_TRUE;
+          }
+
+        EINA_LIST_FOREACH(c->o->styles, itr, style)
+          {
+             if ((style) && (style->default_tag))
+               {
+                  _format_fill(c->obj, c->fmt, style->default_tag);
+                  finalize = EINA_TRUE;
+               }
+          }
+
+        if (finalize)
+           _format_finalize(c->obj, c->fmt);
+     }
+   if (!c->fmt)
+     {
+        //goto end;
+        return;
+     }
+
+   _layout_pre(c, style_pad_l, style_pad_r, style_pad_t, style_pad_b);
+   c->paragraphs = c->o->paragraphs;
+
+   /* If there are no paragraphs, create the minimum needed,
+    * if the last paragraph has no lines/text, create that as well */
+   if (!c->paragraphs)
+     {
+        _layout_paragraph_new(c, NULL, EINA_TRUE);
+        c->o->paragraphs = c->paragraphs;
+     }
+   c->par = (Evas_Object_Textblock_Paragraph *)
+      EINA_INLIST_GET(c->paragraphs)->last;
+   if (!c->par->logical_items)
+     {
+        Evas_Object_Textblock_Text_Item *ti;
+        ti = _layout_text_item_new(c, c->fmt);
+        ti->parent.text_node = c->par->text_node;
+        ti->parent.text_pos = 0;
+        _layout_text_add_logical_item(c, ti, NULL);
+     }
+
+   /* End of logical layout creation */
+
+//end:
+//   c->o->obstacle_changed = EINA_FALSE;
+}
+
+typedef struct _Text_Async_Data Text_Async_Data;
+
+static void _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret);
+static void _layout_async(const Evas_Object *eo_obj, int w, int h);
+
+static void
+_layout_done(Ctxt *c, Evas_Coord *w_ret, Evas_Coord *h_ret,
+      int *style_pad_l, int *style_pad_r, int *style_pad_t,
+      int *style_pad_b)
+{
+
    /* Clean the rest of the format stack */
    while (c->format_stack)
      {
@@ -6428,17 +6455,6 @@ _layout_do(Ctxt *c, int *style_pad_l, int *style_pad_r, int *style_pad_t,
         _format_unref_free(c->evas_o, c->fmt);
      }
 
-end:
-   c->o->obstacle_changed = EINA_FALSE;
-}
-
-static void _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret);
-
-static void
-_layout_done(Ctxt *c, Evas_Coord *w_ret, Evas_Coord *h_ret,
-      int *style_pad_l, int *style_pad_r, int *style_pad_t,
-      int *style_pad_b)
-{
    if (w_ret) *w_ret = c->wmax;
    if (h_ret) *h_ret = c->hmax;
 
@@ -6466,16 +6482,9 @@ _layout_done(Ctxt *c, Evas_Coord *w_ret, Evas_Coord *h_ret,
         c->o->style_pad.b = *style_pad_b;
         _paragraphs_clear(c);
         LYDBG("ZZ: ... layout #2\n");
-        if (c) free(c);
-        c = NULL;
         _layout(eo_obj, w, h, w_ret, h_ret);
         efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_STYLE_INSETS_CHANGED, NULL);
      }
-
-   //TODO: mark that layout is completed (e.g. for async)
-   if (c) free(c);
-   c = NULL;
-
 }
 
 static void
@@ -6534,21 +6543,18 @@ _ctxt_init(Ctxt *c, const Evas_Object *eo_obj, Evas_Coord w, Evas_Coord h)
 static void
 _layout(const Evas_Object *eo_obj, int w, int h, int *w_ret, int *h_ret)
 {
-   //Ctxt ctxt;
+   Ctxt ctxt;
    Ctxt *c = NULL;
    int style_pad_l = 0, style_pad_r = 0, style_pad_t = 0, style_pad_b = 0;
 
    LYDBG("ZZ: layout %p %4ix%4i | w=%4i | last_w=%4i --- '%s'\n", eo_obj, w, h, obj->cur->geometry.w, o->last_w, o->markup_text);
    /* setup context */
-   //c = &ctxt;
-   /* Update all obstacles */
-
-   c = calloc(1, sizeof(*c));
+   c = &ctxt;
    _ctxt_init(c, eo_obj, w, h);
-   _layout_do(c, &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
+   _layout_do_pre(c, &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
+   _layout_do_visual(c);
    _layout_done(c, w_ret, h_ret,
          &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
-
 }
 
 /*
@@ -6592,8 +6598,8 @@ _relayout(const Evas_Object *eo_obj)
  * @internal
  * Check if the object needs a relayout, and if so, execute it.
  */
-static inline void
-_relayout_if_needed(Evas_Object *eo_obj, const Efl_Canvas_Text_Data *o)
+static inline int
+_relayout_if_needed(Evas_Object *eo_obj, Efl_Canvas_Text_Data *o)
 {
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
 
@@ -6603,6 +6609,7 @@ _relayout_if_needed(Evas_Object *eo_obj, const Efl_Canvas_Text_Data *o)
         LYDBG("ZZ: relayout\n");
         _relayout(eo_obj);
      }
+   return 0;
 }
 
 /**
@@ -6623,6 +6630,7 @@ _find_layout_item_line_match(Evas_Object *eo_obj, Evas_Object_Textblock_Node_Tex
    Evas_Object_Textblock_Line *ln;
    Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
 
+   // XXX: protected by callers
    _relayout_if_needed(eo_obj, o);
 
    found_par = n->par;
@@ -6742,6 +6750,8 @@ _efl_canvas_text_efl_object_constructor(Eo *eo_obj, Efl_Canvas_Text_Data *class_
    _FMT(linerelgap) = 0.0;
    _FMT(password) = 1;
    _FMT(ellipsis) = -1;
+
+   LKI(o->lk);
 
    return eo_obj;
 }
@@ -11261,23 +11271,31 @@ evas_textblock_cursor_geometry_bidi_get(const Efl_Text_Cursor_Cursor *cur, Evas_
 EOLIAN static Eina_Bool
 _efl_canvas_text_efl_text_cursor_cursor_geometry_get(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EINA_UNUSED, const Efl_Text_Cursor_Cursor *cur, Efl_Text_Cursor_Cursor_Type ctype, Evas_Coord *cx, Evas_Coord *cy, Evas_Coord *cw, Evas_Coord *ch, Evas_Coord *cx2, Evas_Coord *cy2, Evas_Coord *cw2, Evas_Coord *ch2)
 {
+   Eina_Bool ret = EINA_FALSE;
    if (!cur) return EINA_FALSE;
    Evas_Object_Protected_Data *obj = efl_data_scope_get(cur->obj, EFL_CANVAS_OBJECT_CLASS);
    evas_object_async_block(obj);
-
-   _relayout_if_needed(cur->obj, o);
-
    if (ctype == EFL_TEXT_CURSOR_TYPE_UNDER)
      {
         evas_textblock_cursor_pen_geometry_get(cur, cx, cy, cw, ch);
         return EINA_FALSE;
      }
 
+
 #ifdef BIDI_SUPPORT
 #define IS_RTL(par) ((par) % 2)
 #define IS_DIFFERENT_DIR(l1, l2) (IS_RTL(l1) != IS_RTL(l2))
    else
      {
+        LKL(o->lk);
+        if (o->async_do)
+          {
+             LKU(o->lk);
+             return EINA_FALSE;
+          }
+        o->async_do = EINA_TRUE;
+        LKU(o->lk);
+        _relayout_if_needed(cur->obj, o);
         Evas_Object_Textblock_Line *ln = NULL;
         Evas_Object_Textblock_Item *it = NULL;
         _find_layout_item_match(cur, &ln, &it);
@@ -11423,7 +11441,7 @@ _efl_canvas_text_efl_text_cursor_cursor_geometry_get(Eo *eo_obj EINA_UNUSED, Efl
                        if (cy2) *cy2 = ln2->par->y + ln2->y;
                        if (ch2) *ch2 = ln2->h;
 
-                       return EINA_TRUE;
+                       ret = EINA_TRUE;
                     }
                }
           }
@@ -11436,10 +11454,14 @@ _efl_canvas_text_efl_text_cursor_cursor_geometry_get(Eo *eo_obj EINA_UNUSED, Efl
    (void) cw2;
    (void) ch2;
 #endif
-   evas_textblock_cursor_geometry_get(cur, cx, cy, cw, ch, NULL,
-         (ctype == EFL_TEXT_CURSOR_TYPE_BEFORE) ?
-         EVAS_TEXTBLOCK_CURSOR_BEFORE : EVAS_TEXTBLOCK_CURSOR_UNDER);
-   return EINA_FALSE;
+   if (!ret)
+     {
+        evas_textblock_cursor_geometry_get(cur, cx, cy, cw, ch, NULL,
+              (ctype == EFL_TEXT_CURSOR_TYPE_BEFORE) ?
+              EVAS_TEXTBLOCK_CURSOR_BEFORE : EVAS_TEXTBLOCK_CURSOR_UNDER);
+     }
+   o->async_do = EINA_FALSE;
+   return ret;
 }
 
 EAPI int
@@ -11451,6 +11473,14 @@ evas_textblock_cursor_geometry_get(const Efl_Text_Cursor_Cursor *cur, Evas_Coord
    evas_object_async_block(obj);
    Efl_Canvas_Text_Data *o = efl_data_scope_get(cur->obj, MY_CLASS);
 
+   LKL(o->lk);
+   if (o->async_do)
+     {
+        LKU(o->lk);
+        return -1;
+     }
+   o->async_do = EINA_TRUE;
+   LKU(o->lk);
    _relayout_if_needed(cur->obj, o);
 
    if (ctype == EVAS_TEXTBLOCK_CURSOR_UNDER)
@@ -11500,6 +11530,7 @@ evas_textblock_cursor_geometry_get(const Efl_Text_Cursor_Cursor *cur, Evas_Coord
              if (dir) *dir = itdir;
           }
      }
+   o->async_do = EINA_FALSE;
    return ret;
 }
 
@@ -13192,6 +13223,14 @@ evas_object_textblock_render(Evas_Object *eo_obj EINA_UNUSED,
    Evas_Object_Textblock_Item *itr;
    Evas_Object_Textblock_Line *ln, *cur_ln = NULL;
    Efl_Canvas_Text_Data *o = type_private_data;
+   LKL(o->lk);
+   if (o->async_do)
+     {
+        LKU(o->lk);
+        return;
+     }
+   o->async_do = EINA_TRUE;
+   LKU(o->lk);
    Eina_List *shadows = NULL;
    Eina_List *glows = NULL;
    Eina_List *outlines = NULL;
@@ -13221,7 +13260,7 @@ evas_object_textblock_render(Evas_Object *eo_obj EINA_UNUSED,
 
    /* If there are no paragraphs and thus there are no lines,
     * there's nothing left to do. */
-   if (!o->paragraphs) return;
+   if (!o->paragraphs) goto end;
 
    /* render object to surface with context, and offxet by x,y */
    ENFN->context_multiplier_unset(engine, context);
@@ -13881,6 +13920,8 @@ evas_object_textblock_render(Evas_Object *eo_obj EINA_UNUSED,
      }
    ITEM_WALK_END();
    ENFN->context_multiplier_unset(engine, context);
+end:
+   o->async_do = EINA_FALSE;
 }
 
 EOLIAN static void
@@ -14172,8 +14213,16 @@ evas_object_textblock_render_pre(Evas_Object *eo_obj,
    Efl_Canvas_Text_Data *o = type_private_data;
    int is_v, was_v;
 
+   LKL(o->lk);
+   if (o->async_do)
+     {
+        LKU(o->lk);
+        return;
+     }
+   o->async_do = EINA_TRUE;
+   LKU(o->lk);
    /* dont pre-render the obj twice! */
-   if (obj->pre_render_done) return;
+   if (obj->pre_render_done) goto end;
    obj->pre_render_done = EINA_TRUE;
 
    /* pre-render phase. this does anything an object needs to do just before */
@@ -14272,6 +14321,8 @@ evas_object_textblock_render_pre(Evas_Object *eo_obj,
 done:
    evas_object_render_pre_effect_updates(&obj->layer->evas->clip_changes,
                                          eo_obj, is_v, was_v);
+end:
+   o->async_do = EINA_FALSE;
 }
 
 static void
@@ -15780,5 +15831,190 @@ _efl_canvas_text_efl_text_cursor_cursor_free(Eo *eo_obj EINA_UNUSED, Efl_Canvas_
 {
    evas_textblock_cursor_free(cur);
 }
+
+/* Asynch. layout */
+
+static void
+_layout_done_async(Ctxt *c, Evas_Coord *w_ret, Evas_Coord *h_ret,
+      int *style_pad_l, int *style_pad_r, int *style_pad_t,
+      int *style_pad_b)
+{
+   /* Clean the rest of the format stack */
+   while (c->format_stack)
+     {
+        c->fmt = c->format_stack->data;
+        c->format_stack = eina_list_remove_list(c->format_stack, c->format_stack);
+        _format_unref_free(c->evas_o, c->fmt);
+     }
+
+   if (w_ret) *w_ret = c->wmax;
+   if (h_ret) *h_ret = c->hmax;
+
+   /* Vertically align the textblock */
+   if ((c->o->valign > 0.0) && (c->h > c->hmax))
+     {
+        Evas_Coord adjustment = (c->h - c->hmax) * c->o->valign;
+        Evas_Object_Textblock_Paragraph *par;
+        EINA_INLIST_FOREACH(c->paragraphs, par)
+          {
+             par->y += adjustment;
+          }
+     }
+
+   if ((c->o->style_pad.l != *style_pad_l) || (c->o->style_pad.r != *style_pad_r) ||
+       (c->o->style_pad.t != *style_pad_t) || (c->o->style_pad.b != *style_pad_b))
+     {
+        Evas_Coord w, h;
+        Eo *eo_obj = c->obj;
+        w = c->w;
+        h = c->h;
+        c->o->style_pad.l = *style_pad_l;
+        c->o->style_pad.r = *style_pad_r;
+        c->o->style_pad.t = *style_pad_t;
+        c->o->style_pad.b = *style_pad_b;
+        _paragraphs_clear(c);
+        LYDBG("ZZ: ... layout #2\n");
+        if (c) free(c);
+        c = NULL;
+        _layout(eo_obj, w, h, w_ret, h_ret);
+        efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_STYLE_INSETS_CHANGED, NULL);
+     }
+
+}
+
+struct _Text_Async_Data
+{
+   int ret;
+   Ctxt *c;
+   Evas_Coord style_pad_l, style_pad_r, style_pad_t, style_pad_b;
+   Evas_Coord *w_ret, *h_ret;
+};
+
+static void
+_text_layout_async_do(void *todo, Ecore_Thread *thread EINA_UNUSED) 
+{
+   Text_Async_Data *td = todo;
+   _layout_do_visual(td->c);
+}
+
+static void
+_text_layout_async_done(void *todo, Ecore_Thread *thread EINA_UNUSED)
+{
+   Text_Async_Data *td = todo;
+   _layout_done_async(td->c, td->w_ret, td->h_ret, &td->style_pad_l, &td->style_pad_r, &td->style_pad_b, &td->style_pad_t);
+   //TODO: populate callback data (w_ret, h_ret), and free td 
+   evas_object_change(td->c->obj, td->c->evas_o);
+   efl_event_callback_call(td->c->obj,
+         EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE, NULL);
+   //TODO: mark that layout is completed (e.g. for async)
+   td->c->o->async_do = EINA_FALSE;
+   if (td->c) free(td->c);
+   free(td);
+}
+
+static void
+_text_layout_async_cancel(void *todo, Ecore_Thread *thread EINA_UNUSED)
+{
+   Text_Async_Data *td = todo;
+   // Object must have proper layout, force normal layout
+   td->c->o->async_req = EINA_FALSE;
+   td->c->o->async_fail_force_redo = EINA_TRUE;
+   // todo: FORCE A LAYOUT
+   //_layout_do(c, &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b);
+   //_layout_done(c, w_ret, h_ret,
+   //      &style_pad_l, &style_pad_r, &style_pad_t, &style_pad_b, todo);
+   //TODO: populate callback data (w_ret, h_ret), and free td 
+}
+
+static void
+_layout_async(const Evas_Object *eo_obj, int w, int h)
+{
+   Ctxt *c = NULL;
+   Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
+
+   LYDBG("ZZ: layout %p %4ix%4i | w=%4i | last_w=%4i --- '%s'\n", eo_obj, w, h, obj->cur->geometry.w, o->last_w, o->markup_text);
+
+   c = calloc(1, sizeof(*c));
+   _ctxt_init(c, eo_obj, w, h);
+
+   o->async_req = EINA_FALSE;
+   // TODO: create a thread and run, then send event
+   // ALSO: check o->async_req at the end (in case there is another
+   // call to layout but o->async_do was true i.e. was busy)
+   Ecore_Thread *thread;
+   Text_Async_Data *td = calloc(1, sizeof(*td));
+   _layout_do_pre(c, &td->style_pad_l, &td->style_pad_r, &td->style_pad_t,
+         &td->style_pad_b);
+   td->c = c;
+   thread = ecore_thread_run(_text_layout_async_do, _text_layout_async_done,
+         _text_layout_async_cancel, td);
+}
+
+static void
+_relayout_async(const Evas_Object *eo_obj)
+{
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
+   _layout_async(eo_obj, obj->cur->geometry.w, obj->cur->geometry.h);
+   //o->formatted.valid = 1;
+   //o->formatted.oneline_h = 0;
+   //o->last_w = obj->cur->geometry.w;
+   //o->wrap_changed = EINA_FALSE;
+   //LYDBG("ZZ: --------- layout %p @ %ix%i = %ix%i\n", eo_obj, obj->cur->geometry.w, obj->cur->geometry.h, o->formatted.w, o->formatted.h);
+   //o->last_h = obj->cur->geometry.h;
+   //if ((o->paragraphs) && (!EINA_INLIST_GET(o->paragraphs)->next) &&
+   //    (o->paragraphs->lines) && (!EINA_INLIST_GET(o->paragraphs->lines)->next))
+   //  {
+   //     if (obj->cur->geometry.h < o->formatted.h)
+   //       {
+   //          LYDBG("ZZ: 1 line only... lasth == formatted h (%i)\n", o->formatted.h);
+   //          o->formatted.oneline_h = o->formatted.h;
+   //       }
+   //  }
+   //o->changed = 0;
+   //o->content_changed = 0;
+   //o->format_changed = EINA_FALSE;
+   //o->redraw = 1;
+//#ifdef BIDI_SUPPORT
+//   o->changed_paragraph_direction = EINA_FALSE;
+//#endif
+}
+
+/*
+ * @internal
+ * Check if the object needs a relayout, and if so, execute it.
+ */
+static inline void
+_relayout_if_needed_async(Evas_Object *eo_obj, Efl_Canvas_Text_Data *o)
+{
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
+
+   evas_object_textblock_coords_recalc(eo_obj, obj, obj->private_data);
+   if (!o->formatted.valid)
+     {
+        LYDBG("ZZ: relayout\n");
+        _relayout_async(eo_obj);
+     }
+   else
+     {
+        o->async_do = EINA_FALSE;
+     }
+}
+
+EOLIAN static void
+_efl_canvas_text_async_layout(Eo *eo_obj, Efl_Canvas_Text_Data *o)
+{
+   LKL(o->lk);
+   if (o->async_do)
+     {
+        LKU(o->lk);
+        return;
+     }
+   o->async_do = EINA_TRUE;
+   LKU(o->lk);
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
+   evas_object_async_block(obj);
+   _relayout_if_needed_async(eo_obj, o);
+}
+
 
 #include "canvas/efl_canvas_text.eo.c"

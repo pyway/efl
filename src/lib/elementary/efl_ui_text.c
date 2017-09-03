@@ -1111,7 +1111,10 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
      }
    else
      {
-        efl_canvas_text_size_formatted_get(sw, &fw, &fh);
+        printf("sizing eval calls\n");
+        fw = fh = 0;
+        //efl_canvas_text_size_formatted_get(sw, &fw, &fh);
+        efl_canvas_text_async_layout(sw);
         evas_object_size_hint_min_set(sw, fw, fh);
         edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
         evas_object_size_hint_min_set(sw, -1, -1);
