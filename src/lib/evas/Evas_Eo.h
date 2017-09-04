@@ -28,6 +28,16 @@
  */
 
 /**
+ * @ingroup Efl_Canvas_Text
+ *
+ * @{
+ */
+#include "canvas/efl_canvas_text_async.eo.h"
+
+/**
+ * @}
+ */
+/**
  * @ingroup Evas_Object_Polygon
  *
  * @{
