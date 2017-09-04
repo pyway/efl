@@ -1,0 +1,63 @@
+import efl_text_types;
+
+struct Efl.Canvas.Text.Async_Layout_Event_Info
+{
+   ret: int;
+   w: int;
+   h: int;
+}
+
+class Efl.Canvas.Text_Async (Efl.Canvas.Text)
+{
+   [[Efl canvas text async class
+
+     This class has extra functionality for asynchronous layout.
+     This functionality is disabled by default and should be enabled with
+     @.async.set
+
+     Requesting to layout the object will trigger a set of preparations in the
+     mainloop, followed by thread work to do the visual layout of the text.
+
+     When the layout thread completes its work, it returns to the mainloop,
+     and emits the 'complete' event (see events). The event info stores the
+     calculated text width and height, and should be regarded in the callback.
+   ]]
+   event_prefix: efl_canvas_text;
+   data: null;
+   methods {
+      @property async {
+         [[Enables async operations for the text layout.
+
+           If set to $true, the object's behavior will work as it was
+           asynchornously doing a layout, using locks.
+           If set to $false, there's no locking performed, thus it is
+           suggested to not enable this if there isn't an intention to
+           request for asynchronous layout.
+           Default value is $false.
+
+           Note that this can only be set on construction.
+
+           @since 1.21
+         ]]
+         values {
+            enabled: bool; [[$true if enabled, $false otherwise]]
+         }
+      }
+      async_layout {
+         [[Requests to layout the text off the mainloop.
+
+           This will spawn a work thread to layout the text object. At the
+           end of the layout, it will emit the aync,layout,complete event.
+
+           Note: a prerequisite is that the object was constructed with the
+           @.async flag set to $true.
+         ]]
+      }
+   }
+   implements {
+      Efl.Object.constructor;
+   }
+   events {
+        async,layout,complete: Efl.Canvas.Text.Async_Layout_Event_Info;
+   }
+}
