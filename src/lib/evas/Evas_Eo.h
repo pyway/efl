@@ -28,6 +28,9 @@
  */
 
 /**
+ * @}
+ */
+/**
  * @ingroup Evas_Object_Polygon
  *
  * @{

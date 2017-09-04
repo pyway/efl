@@ -252,6 +252,31 @@ Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annota
            @since 1.18
          ]]
       }
+      @property async {
+         [[Enables async functionality for the text layout.
+
+           Allows usage of the @.async_layout method.
+           Note that this can only be set on construction.
+
+           @since 1.21
+         ]]
+         values {
+            enabled: bool; [[$true if enabled, $false otherwise]]
+         }
+      }
+      async_layout {
+         [[Requests to layout the text off the mainloop.
+
+           Once layout is complete, the result is returned as @Eina.Rectangle,
+           with w, h fields set.
+
+           Note: a prerequisite is that the object was constructed with the
+           @.async flag set to $true.
+
+           @since 1.21
+         ]]
+         return: own(ptr(Eina.Future)); [[Future for layout result]]
+      }
    }
    implements {
       Efl.Object.constructor;
