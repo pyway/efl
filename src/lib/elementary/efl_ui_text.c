@@ -1070,17 +1070,13 @@ _cursor_geometry_recalc(Evas_Object *obj)
 EOLIAN static void
 _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
 {
-   Evas_Coord minw, minh, resw, resh;
-   Evas_Coord fw, fh;
+   Evas_Coord resw, resh;
    Eo *sw;
-   Eina_Bool wrap;
 
    evas_object_geometry_get(obj, NULL, NULL, &resw, &resh);
 
    sw = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
    if (!sw) return;
-
-   wrap = efl_text_wrap_get(sw);
 
    if (!sd->changed && (resw == sd->ent_w) && (resh == sd->ent_h)) return;
 
@@ -1097,29 +1093,11 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
         elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
         efl_gfx_size_set(sd->entry_edje, vw, vh);
         efl_gfx_size_get(sw, &tw, &th);
-        efl_canvas_text_size_formatted_get(sw, &fw, &fh);
-        evas_object_size_hint_min_set(sw, fw, fh);
-        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
-        evas_object_size_hint_min_set(sw, -1, -1);
-
-        if (vw > minw) minw = vw;
-        efl_gfx_size_set(sd->entry_edje, minw, minh);
-
-        if (!efl_text_multiline_get(sw))
-          {
-             evas_object_size_hint_min_set(obj, -1, minh);
-          }
+        efl_canvas_text_async_layout(sw);
      }
    else
      {
-        efl_canvas_text_size_formatted_get(sw, &fw, &fh);
-        evas_object_size_hint_min_set(sw, fw, fh);
-        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
-        evas_object_size_hint_min_set(sw, -1, -1);
-        if (wrap == EFL_TEXT_FORMAT_WRAP_NONE)
-          {
-             evas_object_size_hint_min_set(obj, minw, minh);
-          }
+        efl_canvas_text_async_layout(sw);
      }
    evas_event_thaw(evas_object_evas_get(obj));
    evas_event_thaw_eval(evas_object_evas_get(obj));
@@ -2952,6 +2930,51 @@ _end_handler_mouse_move_cb(void *data,
      _magnifier_move(data);
 }
 
+static void
+_on_layout_complete(void *data EINA_UNUSED, const Efl_Event *event)
+{
+   Eo *obj = data;
+   Efl_Canvas_Text_Async_Layout_Event_Info *ev = event->info;
+   Eo *sw;
+   Evas_Coord minw, minh;
+
+   EFL_UI_TEXT_DATA_GET(obj, sd);
+
+   sw = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
+   if (sd->scroll)
+     {
+        Evas_Coord vw, vh;
+
+        printf("ui text: layout: %d x %d\n", ev->w, ev->h);
+
+        elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
+        evas_object_size_hint_min_set(sw, ev->w, ev->h);
+        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
+        evas_object_size_hint_min_set(sw, -1, -1);
+
+        if (vw > minw) minw = vw;
+        efl_gfx_size_set(sd->entry_edje, minw, minh);
+
+        if (!efl_text_multiline_get(sw))
+          {
+             evas_object_size_hint_min_set(obj, -1, minh);
+          }
+     }
+   else
+     {
+        Eina_Bool wrap;
+
+        wrap = efl_text_wrap_get(sw);
+        evas_object_size_hint_min_set(sw, ev->w, ev->h);
+        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
+        evas_object_size_hint_min_set(sw, -1, -1);
+        if (wrap == EFL_TEXT_FORMAT_WRAP_NONE)
+          {
+             evas_object_size_hint_min_set(obj, minw, minh);
+          }
+     }
+}
+
 EOLIAN static void
 _efl_ui_text_efl_canvas_group_group_add(Eo *obj, Efl_Ui_Text_Data *priv)
 {
@@ -2962,7 +2985,8 @@ _efl_ui_text_efl_canvas_group_group_add(Eo *obj, Efl_Ui_Text_Data *priv)
    /* XXX: needs to be before efl_canvas_group_add, since the latter will
     * trigger a layout_sizing_eval call and requires the canvas text object to
     * be instantiated. */
-   text_obj = efl_add(EFL_UI_INTERNAL_TEXT_INTERACTIVE_CLASS, obj);
+   text_obj = efl_add(EFL_UI_INTERNAL_TEXT_INTERACTIVE_CLASS, obj,
+         efl_canvas_text_async_enabled_set(efl_added, EINA_TRUE));
    efl_composite_attach(obj, text_obj);
 
    // FIXME: use the theme, when a proper theming option is available
@@ -3011,6 +3035,8 @@ _efl_ui_text_efl_canvas_group_group_add(Eo *obj, Efl_Ui_Text_Data *priv)
          _efl_ui_text_cursor_changed_cb, obj);
    evas_object_event_callback_add(priv->entry_edje, EVAS_CALLBACK_MOVE,
          _efl_ui_text_move_cb, obj);
+   efl_event_callback_add(text_obj, EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE,
+        _on_layout_complete, obj);
 
 
    priv->hit_rect = evas_object_rectangle_add(evas_object_evas_get(obj));
