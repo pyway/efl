@@ -98,6 +98,12 @@ typedef struct
 } Test_Data;
 
 static void
+my_efl_ui_text_bt_1(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   efl_ui_text_interactive_editable_set(data, !efl_ui_text_interactive_editable_get(data));
+}
+
+static void
 my_efl_ui_text_bt_3(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Efl_Text_Cursor_Cursor *sel_start, *sel_end;
@@ -168,8 +174,9 @@ test_efl_ui_text(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *eve
    elm_win_resize_object_add(win, bx);
    evas_object_show(bx);
 
-   en = efl_add(EFL_UI_TEXT_CLASS, win,
-         efl_text_multiline_set(efl_added, EINA_TRUE));
+   en = efl_add(EFL_UI_TEXT_ASYNC_CLASS, win);
+
+   efl_text_multiline_set(en, EINA_TRUE);
 
    printf("Added Efl.Ui.Text object\n");
    efl_key_data_set(en, "wrap_idx", 0);
@@ -205,6 +212,15 @@ test_efl_ui_text(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *eve
    elm_box_horizontal_set(bx2, EINA_TRUE);
    evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
    evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_object_text_set(bt, "Edit");
+   evas_object_smart_callback_add(bt, "clicked", my_efl_ui_text_bt_1, en);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   elm_object_focus_allow_set(bt, EINA_FALSE);
+   evas_object_show(bt);
 
    bt = elm_button_add(win);
    elm_object_text_set(bt, "Sel");
