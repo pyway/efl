@@ -1067,11 +1067,54 @@ _cursor_geometry_recalc(Evas_Object *obj)
    elm_widget_show_region_set(obj, sr, EINA_FALSE);
 }
 
+static void
+_layout_text_sizing_eval(Eo *obj, Evas_Coord tw, Evas_Coord th)
+{
+   Eo *sw;
+   Evas_Coord minw, minh;
+
+   EFL_UI_TEXT_DATA_GET(obj, sd);
+
+   sw = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
+   if (sd->scroll)
+     {
+        Evas_Coord vw, vh;
+
+        elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
+        evas_object_size_hint_min_set(sw, tw, th);
+        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
+        evas_object_size_hint_min_set(sw, -1, -1);
+
+        if (vw > minw) minw = vw;
+        efl_gfx_size_set(sd->entry_edje, minw, minh);
+
+        if (!efl_text_multiline_get(sw))
+          {
+             evas_object_size_hint_min_set(obj, -1, minh);
+          }
+     }
+   else
+     {
+        Eina_Bool wrap;
+
+        wrap = efl_text_wrap_get(sw);
+        evas_object_size_hint_min_set(sw, tw, th);
+        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
+        evas_object_size_hint_min_set(sw, -1, -1);
+        if (wrap == EFL_TEXT_FORMAT_WRAP_NONE)
+          {
+             evas_object_size_hint_min_set(obj, minw, minh);
+          }
+     }
+   _decoration_defer_all(obj);
+}
+
 EOLIAN static void
 _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
 {
    Evas_Coord resw, resh;
    Eo *sw;
+   Eina_Bool can_async;
 
    evas_object_geometry_get(obj, NULL, NULL, &resw, &resh);
 
@@ -1085,6 +1128,8 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
    sd->ent_h = resh;
 
 
+   can_async = !sd->editable;
+
    evas_event_freeze(evas_object_evas_get(obj));
    if (sd->scroll)
      {
@@ -1093,11 +1138,13 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
         elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
         efl_gfx_size_set(sd->entry_edje, vw, vh);
         efl_gfx_size_get(sw, &tw, &th);
-        efl_canvas_text_async_layout(sw);
      }
-   else
+   if (!can_async)
      {
-        efl_canvas_text_async_layout(sw);
+        /* Don't defer - complete the sizing evaluation now */
+        Evas_Coord fw, fh;
+        efl_canvas_text_size_formatted_get(obj, &fw, &fh);
+        _layout_text_sizing_eval(obj, fw, fh);
      }
    evas_event_thaw(evas_object_evas_get(obj));
    evas_event_thaw_eval(evas_object_evas_get(obj));
@@ -2931,48 +2978,10 @@ _end_handler_mouse_move_cb(void *data,
 }
 
 static void
-_on_layout_complete(void *data EINA_UNUSED, const Efl_Event *event)
+_on_layout_complete(void *data, const Efl_Event *event)
 {
-   Eo *obj = data;
    Efl_Canvas_Text_Async_Layout_Event_Info *ev = event->info;
-   Eo *sw;
-   Evas_Coord minw, minh;
-
-   EFL_UI_TEXT_DATA_GET(obj, sd);
-
-   sw = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
-   if (sd->scroll)
-     {
-        Evas_Coord vw, vh;
-
-        printf("ui text: layout: %d x %d\n", ev->w, ev->h);
-
-        elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
-        evas_object_size_hint_min_set(sw, ev->w, ev->h);
-        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
-        evas_object_size_hint_min_set(sw, -1, -1);
-
-        if (vw > minw) minw = vw;
-        efl_gfx_size_set(sd->entry_edje, minw, minh);
-
-        if (!efl_text_multiline_get(sw))
-          {
-             evas_object_size_hint_min_set(obj, -1, minh);
-          }
-     }
-   else
-     {
-        Eina_Bool wrap;
-
-        wrap = efl_text_wrap_get(sw);
-        evas_object_size_hint_min_set(sw, ev->w, ev->h);
-        edje_object_size_min_calc(sd->entry_edje, &minw, &minh);
-        evas_object_size_hint_min_set(sw, -1, -1);
-        if (wrap == EFL_TEXT_FORMAT_WRAP_NONE)
-          {
-             evas_object_size_hint_min_set(obj, minw, minh);
-          }
-     }
+   _layout_text_sizing_eval(data, ev->w, ev->h);
 }
 
 EOLIAN static void
