@@ -15953,7 +15953,8 @@ _efl_canvas_text_async_layout(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EI
 
    if (!o->async_enabled)
      {
-        ERR("Unimplemented unless async_enabled is TRUE");
+        ERR("Have not set 'async_enabled'."
+              "It is required to explicity be enabled");
         return;
      }
 
