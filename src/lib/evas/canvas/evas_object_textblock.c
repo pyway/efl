@@ -664,7 +664,7 @@ struct _Evas_Object_Textblock
 
 
 
-#define ASYNC_BLOCK_RET do { \
+#define ASYNC_BLOCK_NEED_RET() do { \
          _async_ret = EINA_TRUE; \
          } while(0)
 
@@ -14587,16 +14587,6 @@ EOLIAN static void
 _efl_canvas_text_efl_text_text_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
       const char *text)
 {
-   ASYNC_BLOCK_START()
-     {
-        Efl_Canvas_Text_Async_Text_Set_Info info;
-        info.text = text;
-        efl_event_callback_call(eo_obj,
-              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET,
-              &info);
-        ASYNC_BLOCK_RET;
-     }
-   ASYNC_BLOCK_END()
    evas_object_textblock_text_markup_set(eo_obj, "");
    efl_text_cursor_text_insert(eo_obj, o->cursor, text);
    efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
@@ -16026,6 +16016,24 @@ _efl_canvas_text_async_efl_object_constructor(Eo *obj, void *_pd EINA_UNUSED)
    efl_canvas_text_async_set(obj, EINA_TRUE);
 
    return obj;
+}
+
+EOLIAN static void
+_efl_canvas_text_async_efl_text_text_set(Eo *obj, void *_pd EINA_UNUSED,
+      const char *text)
+{
+   Efl_Canvas_Text_Data *o = efl_data_scope_get(obj, MY_CLASS);
+   ASYNC_BLOCK_START()
+     {
+        Efl_Canvas_Text_Async_Text_Set_Info info;
+        info.text = text;
+        efl_event_callback_call(obj,
+              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET,
+              &info);
+        ASYNC_BLOCK_NEED_RET();
+     }
+   ASYNC_BLOCK_END()
+   efl_text_set(efl_super(obj, EFL_CANVAS_TEXT_ASYNC_CLASS), text);
 }
 
 //#undef LKL
