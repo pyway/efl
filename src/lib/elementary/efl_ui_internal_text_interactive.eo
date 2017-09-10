@@ -1,4 +1,4 @@
-class Efl.Ui.Internal.Text.Interactive (Efl.Canvas.Text, Efl.Ui.Text.Interactive)
+class Efl.Ui.Internal.Text.Interactive (Efl.Canvas.Text_Async, Efl.Ui.Text.Interactive)
 {
    [[An internal object that is in charge of the interactive aspect of the text widget
 

@@ -3003,7 +3003,7 @@ _on_layout_complete(void *data, const Efl_Event *event)
 static void
 _on_text_set_reject(void *data, const Efl_Event *event)
 {
-   Efl_Canvas_Text_Async_Text_Set_Rejected_Info *ev = event->info;
+   Efl_Canvas_Text_Async_Text_Set_Info *ev = event->info;
    EFL_UI_TEXT_DATA_GET(data, sd);
    if (sd->async_busy)
      {
@@ -3026,8 +3026,7 @@ _efl_ui_text_efl_canvas_group_group_add(Eo *obj, Efl_Ui_Text_Data *priv)
    /* XXX: needs to be before efl_canvas_group_add, since the latter will
     * trigger a layout_sizing_eval call and requires the canvas text object to
     * be instantiated. */
-   text_obj = efl_add(EFL_UI_INTERNAL_TEXT_INTERACTIVE_CLASS, obj,
-         efl_canvas_text_async_enabled_set(efl_added, EINA_TRUE));
+   text_obj = efl_add(EFL_UI_INTERNAL_TEXT_INTERACTIVE_CLASS, obj);
    efl_composite_attach(obj, text_obj);
    priv->text_obj = text_obj;
 
@@ -3084,7 +3083,7 @@ _efl_ui_text_efl_canvas_group_group_add(Eo *obj, Efl_Ui_Text_Data *priv)
               EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE,
               _on_layout_complete, obj);
         efl_event_callback_add(text_obj,
-              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET_REJECTED, 
+              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET, 
               _on_text_set_reject, obj);
      }
 
