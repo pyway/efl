@@ -14566,9 +14566,18 @@ _efl_canvas_text_cursor_text_append(Efl_Text_Cursor_Cursor *cur,
 }
 
 EOLIAN static void
-_efl_canvas_text_efl_text_text_set(Eo *eo_obj, Efl_Canvas_Text_Data *o EINA_UNUSED,
+_efl_canvas_text_efl_text_text_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
       const char *text)
 {
+   if (o->layout_busy)
+     {
+        Efl_Canvas_Text_Async_Text_Set_Rejected_Info info;
+        info.text = text;
+        efl_event_callback_call(eo_obj,
+              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET_REJECTED,
+              &info);
+        return;
+     }
    evas_object_textblock_text_markup_set(eo_obj, "");
    efl_text_cursor_text_insert(eo_obj, o->cursor, text);
    efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
@@ -15875,9 +15884,11 @@ struct _Async_Layout_Cb_Info
 static void
 _text_layout_async_done(void *todo, Ecore_Thread *thread EINA_UNUSED)
 {
-   Async_Layout_Cb_Info data;
+   Efl_Canvas_Text_Async_Layout_Event_Info data;
+
    Text_Async_Data *td = todo;
    Ctxt *c = td->c;
+   Eo *obj = c->obj;
    Evas_Coord w_ret, h_ret;
    _layout_done(c, &w_ret, &h_ret);
 
@@ -15907,16 +15918,15 @@ _text_layout_async_done(void *todo, Ecore_Thread *thread EINA_UNUSED)
 #endif
 
 #endif
-   data.w_ret = c->wmax;
-   data.h_ret = c->hmax;
+   data.w = c->wmax;
+   data.h = c->hmax;
    //TODO: callback event with ret: 0 x 0
-   efl_event_callback_call(c->obj, EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE, &data);
-   // Cleanup
    c->o->layout_busy = EINA_FALSE;
    c->o->changed = EINA_TRUE;
    evas_object_change(c->obj, c->evas_o);
    free(c);
    free(td);
+   efl_event_callback_call(obj, EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE, &data);
 }
 
 static void
@@ -15991,8 +16001,6 @@ _efl_canvas_text_async_layout(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EI
    td->c = c;
    ecore_thread_run(_text_layout_async_do, _text_layout_async_done,
          NULL, td);
-
-   // NOTE: Unlocks on async_done function
 }
 
 //#undef LKL

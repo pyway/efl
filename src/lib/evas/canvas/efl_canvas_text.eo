@@ -9,6 +9,11 @@ struct Efl.Canvas.Text.Async_Layout_Event_Info
    h: int;
 }
 
+struct Efl.Canvas.Text.Async_Text_Set_Rejected_Info
+{
+   text: string;
+}
+
 class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties, Efl.Canvas.Filter.Internal,
 Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annotate)
 {
@@ -382,5 +387,6 @@ Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annota
       changed; [[Called when canvas text changed ]]
       style_insets,changed; [[Called when the property @.style_insets changed.]]
       async,layout,complete: Efl.Canvas.Text.Async_Layout_Event_Info;
+      async,text,set,rejected: Efl.Canvas.Text.Async_Text_Set_Rejected_Info;
    }
 }
