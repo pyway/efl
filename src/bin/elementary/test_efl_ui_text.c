@@ -174,8 +174,9 @@ test_efl_ui_text(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *eve
    elm_win_resize_object_add(win, bx);
    evas_object_show(bx);
 
-   en = efl_add(EFL_UI_TEXT_CLASS, win,
-         efl_text_multiline_set(efl_added, EINA_TRUE));
+   en = efl_add(EFL_UI_TEXT_CLASS, win);
+
+   efl_text_multiline_set(en, EINA_TRUE);
 
    printf("Added Efl.Ui.Text object\n");
    efl_key_data_set(en, "wrap_idx", 0);

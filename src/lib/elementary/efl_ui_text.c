@@ -93,7 +93,8 @@ struct _Efl_Ui_Text_Data
    Elm_Sel_Format                        drop_format;
 
    struct {
-        Eina_List                       *queue_text;
+        char                             *text;
+        Eina_Bool                        enabled;
    } async;
 
    Eina_Bool                             input_panel_return_key_disabled : 1;
@@ -1140,7 +1141,6 @@ _efl_ui_text_elm_layout_sizing_eval(Eo *obj, Efl_Ui_Text_Data *sd)
      {
         Evas_Coord vw, vh;
         elm_interface_scrollable_content_viewport_geometry_get(obj, NULL, NULL, &vw, &vh);
-        printf("edje resize to: %d x %d\n", vw, vh);
         efl_gfx_size_set(sd->entry_edje, vw, vh);
      }
    if (can_async)
@@ -2988,26 +2988,31 @@ _end_handler_mouse_move_cb(void *data,
 static void
 _on_layout_complete(void *data, const Efl_Event *event)
 {
-   char *text;
-   Eina_List *last;
    EFL_UI_TEXT_DATA_GET(data, sd);
    Efl_Canvas_Text_Async_Layout_Event_Info *ev = event->info;
    _layout_text_sizing_eval(data, ev->w, ev->h);
 
-   // Get last attempt to set a text
-   last = eina_list_last(sd->async.queue_text);
-   if (last)
+   if (sd->async.text)
      {
-        char *tmp;
-        text = eina_list_data_get(last);
-        sd->async.queue_text =
-           eina_list_remove_list(sd->async.queue_text, last);
-        EINA_LIST_FREE(sd->async.queue_text, tmp)
+        efl_text_set(sd->text_obj, sd->async.text);
+        free(sd->async.text);
+        sd->async.text = NULL;
+     }
+}
+
+static void
+_on_text_set_reject(void *data, const Efl_Event *event)
+{
+   Efl_Canvas_Text_Async_Text_Set_Rejected_Info *ev = event->info;
+   EFL_UI_TEXT_DATA_GET(data, sd);
+   if (sd->async_busy)
+     {
+        char *tmp = strdup(ev->text);
+        if (sd->async.text)
           {
-             free(tmp);
+             free(sd->async.text);
           }
-        sd->async_busy = EINA_FALSE;
-        efl_text_set(sd->text_obj, text);
+        sd->async.text = tmp;
      }
 }
 
@@ -3071,9 +3076,17 @@ _efl_ui_text_efl_canvas_group_group_add(Eo *obj, Efl_Ui_Text_Data *priv)
          _efl_ui_text_cursor_changed_cb, obj);
    evas_object_event_callback_add(priv->entry_edje, EVAS_CALLBACK_MOVE,
          _efl_ui_text_move_cb, obj);
-   efl_event_callback_add(text_obj, EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE,
-        _on_layout_complete, obj);
 
+   /* Async layout */
+   if (priv->async.enabled)
+     {
+        efl_event_callback_add(text_obj,
+              EFL_CANVAS_TEXT_EVENT_ASYNC_LAYOUT_COMPLETE,
+              _on_layout_complete, obj);
+        efl_event_callback_add(text_obj,
+              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET_REJECTED, 
+              _on_text_set_reject, obj);
+     }
 
    priv->hit_rect = evas_object_rectangle_add(evas_object_evas_get(obj));
    evas_object_data_set(priv->hit_rect, "_elm_leaveme", obj);
@@ -3394,8 +3407,9 @@ _cb_deleted(void *data EINA_UNUSED, const Efl_Event *ev)
 }
 
 EOLIAN static Eo *
-_efl_ui_text_efl_object_constructor(Eo *obj, Efl_Ui_Text_Data *_pd EINA_UNUSED)
+_efl_ui_text_efl_object_constructor(Eo *obj, Efl_Ui_Text_Data *pd)
 {
+   pd->async.enabled = EINA_TRUE;
    obj = efl_constructor(efl_super(obj, MY_CLASS));
    efl_canvas_object_type_set(obj, MY_CLASS_NAME_LEGACY);
    evas_object_smart_callbacks_descriptions_set(obj, _smart_callbacks);
@@ -5399,21 +5413,6 @@ _efl_ui_text_move_cb(void *data, Evas *e EINA_UNUSED,
       Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    _decoration_defer_all(data);
-}
-
-EOLIAN static void
-_efl_ui_text_efl_text_text_set(Eo *obj EINA_UNUSED,
-      Efl_Ui_Text_Data *sd, const char *text)
-{
-   if (sd->async_busy)
-     {
-        char *tmp = strdup(text);
-        sd->async.queue_text = eina_list_append(sd->async.queue_text, tmp);
-     }
-   else
-     {
-        efl_text_set(sd->text_obj, text);
-     }
 }
 
 #if 0
