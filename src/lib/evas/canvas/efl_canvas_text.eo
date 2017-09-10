@@ -2,18 +2,6 @@ import efl_text_types;
 
 struct Efl.Canvas.Text.Style; [[EFL text style data structure]]
 
-struct Efl.Canvas.Text.Async_Layout_Event_Info
-{
-   ret: int;
-   w: int;
-   h: int;
-}
-
-struct Efl.Canvas.Text.Async_Text_Set_Rejected_Info
-{
-   text: string;
-}
-
 class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties, Efl.Canvas.Filter.Internal,
 Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annotate)
 {
@@ -264,41 +252,6 @@ Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annota
            @since 1.18
          ]]
       }
-      @property async_enabled {
-         [[Enables async operations for the text layout.
-
-           If set to $true, the object's behavior will work as it was
-           asynchornously doing a layout, using locks.
-           If set to $false, there's no locking performed, thus it is
-           suggested to not enable this if there isn't an intention to
-           request for asynchronous layout.
-           Default value is $false.
-
-           Note that this can only be set on construction.
-
-           @since 1.21
-         ]]
-         set {
-            legacy: null;
-         }
-         get {
-            legacy: null;
-         }
-         values {
-            enabled: bool; [[$true if enabled, $false otherwise]]
-         }
-      }
-      async_layout {
-         [[Requests to layout the text off the mainloop.
-
-           This will spawn a work thread to layout the text object. At the
-           end of the layout, it will emit the aync,layout,complete event.
-
-           Note: a prerequisite is that the object was constructed with the
-           @.async_enabled flag set to $true.
-         ]]
-         legacy: null;
-      }
    }
    implements {
       Efl.Object.constructor;
@@ -386,7 +339,5 @@ Efl.Text.Font, Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor, Efl.Text.Annota
       cursor,changed; [[Called when cursor changed]]
       changed; [[Called when canvas text changed ]]
       style_insets,changed; [[Called when the property @.style_insets changed.]]
-      async,layout,complete: Efl.Canvas.Text.Async_Layout_Event_Info;
-      async,text,set,rejected: Efl.Canvas.Text.Async_Text_Set_Rejected_Info;
    }
 }

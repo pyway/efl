@@ -655,6 +655,24 @@ struct _Evas_Object_Textblock
    Eina_Bool                           async_enabled : 1;
 };
 
+#define ASYNC_BLOCK_START() \
+   if (o->async_enabled) \
+      { \
+         Eina_Bool _async_ret = EINA_FALSE; \
+         LKL(o->lk); \
+         if (o->layout_busy) \
+
+
+
+#define ASYNC_BLOCK_RET do { \
+         _async_ret = EINA_TRUE; \
+         } while(0)
+
+#define ASYNC_BLOCK_END() \
+         LKU(o->lk); \
+         if (_async_ret) return; \
+         }
+
 struct _Evas_Textblock_Selection_Iterator
 {
    Eina_Iterator                       iterator; /**< Eina Iterator. */
@@ -14569,15 +14587,16 @@ EOLIAN static void
 _efl_canvas_text_efl_text_text_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
       const char *text)
 {
-   if (o->layout_busy)
+   ASYNC_BLOCK_START()
      {
-        Efl_Canvas_Text_Async_Text_Set_Rejected_Info info;
+        Efl_Canvas_Text_Async_Text_Set_Info info;
         info.text = text;
         efl_event_callback_call(eo_obj,
-              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET_REJECTED,
+              EFL_CANVAS_TEXT_EVENT_ASYNC_TEXT_SET,
               &info);
-        return;
+        ASYNC_BLOCK_RET;
      }
+   ASYNC_BLOCK_END()
    evas_object_textblock_text_markup_set(eo_obj, "");
    efl_text_cursor_text_insert(eo_obj, o->cursor, text);
    efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
@@ -15892,20 +15911,16 @@ _text_layout_async_done(void *todo, Ecore_Thread *thread EINA_UNUSED)
    Evas_Coord w_ret, h_ret;
    _layout_done(c, &w_ret, &h_ret);
 
-#if 1
-   // Copied from _relayout
    c->o->formatted.valid = 1;
    c->o->formatted.oneline_h = 0;
    c->o->last_w = c->evas_o->cur->geometry.w;
    c->o->wrap_changed = EINA_FALSE;
-   LYDBG("ZZ: --------- layout %p @ %ix%i = %ix%i\n", eo_obj, obj->cur->geometry.w, obj->cur->geometry.h, c->o->formatted.w, c->o->formatted.h);
    c->o->last_h = c->evas_o->cur->geometry.h;
    if ((c->o->paragraphs) && (!EINA_INLIST_GET(c->o->paragraphs)->next) &&
        (c->o->paragraphs->lines) && (!EINA_INLIST_GET(c->o->paragraphs->lines)->next))
      {
         if (c->evas_o->cur->geometry.h < c->o->formatted.h)
           {
-             LYDBG("ZZ: 1 line only... lasth == formatted h (%i)\n", c->o->formatted.h);
              c->o->formatted.oneline_h = c->o->formatted.h;
           }
      }
@@ -15917,10 +15932,8 @@ _text_layout_async_done(void *todo, Ecore_Thread *thread EINA_UNUSED)
    c->o->changed_paragraph_direction = EINA_FALSE;
 #endif
 
-#endif
    data.w = c->wmax;
    data.h = c->hmax;
-   //TODO: callback event with ret: 0 x 0
    c->o->layout_busy = EINA_FALSE;
    c->o->changed = EINA_TRUE;
    evas_object_change(c->obj, c->evas_o);
@@ -15937,9 +15950,10 @@ _text_layout_async_do(void *todo, Ecore_Thread *thread EINA_UNUSED)
 }
 
 EOLIAN static void
-_efl_canvas_text_async_enabled_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
+_efl_canvas_text_async_async_set(Eo *eo_obj, void *_pd EINA_UNUSED,
       Eina_Bool enabled)
 {
+   Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    if (efl_finalized_get(eo_obj))
      {
         ERR("Can't change the async state after construction.");
@@ -15949,14 +15963,16 @@ _efl_canvas_text_async_enabled_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
 }
 
 EOLIAN static Eina_Bool
-_efl_canvas_text_async_enabled_get(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o)
+_efl_canvas_text_async_async_get(Eo *eo_obj EINA_UNUSED, void *_pd EINA_UNUSED)
 {
+   Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    return o->async_enabled;
 }
 
 EOLIAN static void
-_efl_canvas_text_async_layout(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EINA_UNUSED)
+_efl_canvas_text_async_async_layout(Eo *eo_obj EINA_UNUSED, void *_pd EINA_UNUSED)
 {
+   Efl_Canvas_Text_Data *o = efl_data_scope_get(eo_obj, MY_CLASS);
    Text_Async_Data *td;
    Ctxt *c;
    Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
@@ -16003,6 +16019,16 @@ _efl_canvas_text_async_layout(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EI
          NULL, td);
 }
 
+EOLIAN static Eo *
+_efl_canvas_text_async_efl_object_constructor(Eo *obj, void *_pd EINA_UNUSED)
+{
+   obj = efl_constructor(efl_super(obj, EFL_CANVAS_TEXT_ASYNC_CLASS));
+   efl_canvas_text_async_set(obj, EINA_TRUE);
+
+   return obj;
+}
+
 //#undef LKL
 //#undef LKU
 #include "canvas/efl_canvas_text.eo.c"
+#include "canvas/efl_canvas_text_async.eo.c"
