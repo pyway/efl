@@ -15908,12 +15908,8 @@ struct _Async_Layout_Cb_Info
 static void
 _text_layout_async_do(void *todo, Ecore_Thread *thread EINA_UNUSED)
 {
-   clock_t start, end;
-   start = clock();
    Text_Async_Data *td = todo;
    _layout_visual(td->c);
-   end = clock();
-   printf("time: %f\n", (float) (end - start) / CLOCKS_PER_SEC);
 }
 
 static void
