@@ -4879,8 +4879,9 @@ static Eina_Bool
 _eina_value_type_rectangle_pget(const Eina_Value_Type *type EINA_UNUSED, const void *mem, void *ptr)
 {
    const Eina_Rectangle *tr = mem;
+   Eina_Rectangle *p = ptr;
 
-   memcpy(ptr, &tr, sizeof (void*));
+   memcpy(p, tr, sizeof (*p));
    return EINA_TRUE;
 }
 
