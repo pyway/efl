@@ -26,6 +26,7 @@ efl_eolian_files = \
       lib/efl/interfaces/efl_text_format.eo \
       lib/efl/interfaces/efl_text_cursor.eo \
       lib/efl/interfaces/efl_text_annotate.eo \
+      lib/efl/interfaces/efl_text_markup.eo \
       lib/efl/interfaces/efl_text_properties.eo \
       lib/efl/interfaces/efl_gfx_stack.eo \
       lib/efl/interfaces/efl_gfx_view.eo \
