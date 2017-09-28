@@ -3277,7 +3277,7 @@ _elm_entry_text_get(Eo *obj, Elm_Entry_Data *sd, const char *item)
    if (strcmp(item, "elm.text"))
      return edje_object_part_text_get(sd->entry_edje, item);
 
-   text = edje_object_part_text_get(sd->entry_edje, "elm.text");
+   text = efl_text_markup_get(efl_part(sd->entry_edje, "elm.text"));
    if (!text)
      {
         ERR("text=NULL for edje %p, part 'elm.text'", sd->entry_edje);
