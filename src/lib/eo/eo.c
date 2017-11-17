@@ -181,15 +181,35 @@ _vtable_chain_write_prepare(Dich_Chain1 *dst)
    _vtable_chain2_unref(old.chain2);
 }
 
+static void
+_vtable_debug(Eo_Vtable *table)
+{
+   for (unsigned int i = 0; i < table->size; ++i)
+   {
+      Dich_Chain1 *d = &table->chain[i];
+      if (!d || !d->chain2) continue;
+
+      for (int i = 0; i < 32; ++i)
+        {
+           const char *name = "";
+           if (d->chain2->funcs[i].src)
+             name = d->chain2->funcs[i].src->desc->name;
+           printf("%s-%p-%p\n", name, d->chain2->funcs[i].src, d->chain2->funcs[i].func);
+        }
+   }
+}
+
 static inline void
 _vtable_chain_copy_ref(Dich_Chain1 *dst, const Dich_Chain1 *src)
 {
    if (dst->chain2)
      {
+        printf("Merging chains %p %p\n", dst, src);
         _vtable_chain_merge(dst, src);
      }
    else
      {
+        printf("Copying chain %p\n", src->chain2);
         dst->chain2 = src->chain2;
         dst->chain2->refcount++;
      }
@@ -879,7 +899,7 @@ efl_class_functions_set(const Efl_Class *klass_id, const Efl_Object_Ops *object_
         for ( mro_itr-- ; mro_itr > klass->mro ; mro_itr--)
           _vtable_copy_all(&klass->vtable, &(*mro_itr)->vtable);
      }
-
+   _vtable_debug(&klass->vtable);
    return _eo_class_funcs_set(&klass->vtable, object_ops, klass, klass, 0, EINA_FALSE) &&
       _eo_class_funcs_set(&klass->vtable, class_ops, klass, klass, object_ops->count, EINA_FALSE);
 
@@ -999,7 +1019,7 @@ _efl_add_internal_end(Eo *eo_id, Eo *finalized_id)
         // fails or succeeds based on if service is there.
         //
         // until there is a better solution - don't complain here.
-        // 
+        //
         //             ERR("Object of class '%s' - Finalizing the object failed.",
         //                   klass->desc->name);
         goto cleanup;
