@@ -209,7 +209,7 @@ _vtable_chain_copy_ref(Dich_Chain1 *dst, const Dich_Chain1 *src)
      }
    else
      {
-        printf("Copying chain %p\n", src->chain2);
+        printf("Copying chain %p %p\n", dst, src);
         dst->chain2 = src->chain2;
         dst->chain2->refcount++;
      }
