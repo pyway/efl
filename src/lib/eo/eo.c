@@ -897,9 +897,14 @@ efl_class_functions_set(const Efl_Class *klass_id, const Efl_Object_Ops *object_
 
         /* Skip ourselves. */
         for ( mro_itr-- ; mro_itr > klass->mro ; mro_itr--)
-          _vtable_copy_all(&klass->vtable, &(*mro_itr)->vtable);
+           {
+              printf("==========================================================================>\n");
+              printf("copy_all of %s\n", (*mro_itr)->desc->name);
+              _vtable_copy_all(&klass->vtable, &(*mro_itr)->vtable);
+              _vtable_debug(&klass->vtable);
+           }
      }
-   _vtable_debug(&klass->vtable);
+
    return _eo_class_funcs_set(&klass->vtable, object_ops, klass, klass, 0, EINA_FALSE) &&
       _eo_class_funcs_set(&klass->vtable, class_ops, klass, klass, object_ops->count, EINA_FALSE);
 
