@@ -227,6 +227,10 @@ _vtable_copy_all(Eo_Vtable *dst, const Eo_Vtable *src)
           {
              _vtable_chain_copy_ref(dc1, sc1);
           }
+        else
+          {
+            printf("Empty chain %p is untoutched\n", dc1);
+          }
      }
 }
 
