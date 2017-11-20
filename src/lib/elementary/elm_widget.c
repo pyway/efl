@@ -5122,6 +5122,8 @@ _elm_widget_on_focus_update(Eo *obj, Elm_Widget_Smart_Data *sd, Elm_Object_Item 
    if (!elm_widget_can_focus_get(obj))
      return EINA_FALSE;
 
+   focused = elm_widget_focus_get(obj);
+
    if (!sd->resize_obj)
      evas_object_focus_set(obj, focused);
 
