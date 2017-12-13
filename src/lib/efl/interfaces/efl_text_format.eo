@@ -1,3 +1,5 @@
+import efl_text_types;
+
 enum Efl.Text.Format.Wrap {
    [[Wrap mode of the text (not in effect if not multiline)]]
    none, [[No wrapping]]
@@ -115,6 +117,20 @@ interface Efl.Text.Format {
          ]]
          values {
             repch: string; [[Replacement character]]
+         }
+      }
+      format_insert {
+         [[Inserts a format at the cursor's position.
+
+           The format is specified with a format string e.g. "color=#fff".
+           The inserted format will be inlined in the cursor at the position.
+           Common usage is to also insert a closing format e.g. "/color" to
+           match the opening format at the end of the range the format is
+           expected to apply.
+         ]]
+         params {
+            cur: ptr(Efl.Text.Cursor.Cursor); [[The cursor position to insert]]
+            format: string; [[The format]]
          }
       }
    }
