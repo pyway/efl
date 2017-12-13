@@ -10792,6 +10792,14 @@ _evas_textblock_cursor_format_append(Efl_Text_Cursor_Cursor *cur,
    return is_visible;
 }
 
+EOLIAN Eina_Bool
+_efl_canvas_text_efl_text_format_format_insert(Eo *eo_obj EINA_UNUSED,
+      Efl_Text_Cursor_Cursor *cur,Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const char *format)
+{
+   return _evas_textblock_cursor_format_append(cur, format, NULL, EINA_FALSE);
+}
+
 EAPI Eina_Bool
 evas_textblock_cursor_format_append(Evas_Textblock_Cursor *cur, const char *format)
 {
