@@ -851,6 +851,21 @@ _efl_ui_text_background_switch(Evas_Object *from_edje, Evas_Object *to_edje)
      }
 }
 
+static void
+_ui_text_theme_classes_update(Efl_Canvas_Layout *edje, Eo *text_obj)
+{
+   const char *font;
+   Efl_Font_Size size;
+   int r, g, b, a;
+
+   efl_gfx_text_class_get(edje, "efl/text/text/default", &font, &size);
+   efl_text_font_set(text_obj, font, size);
+
+   efl_gfx_color_class_get(edje, "efl/text/text/default",
+         EFL_GFX_COLOR_CLASS_LAYER_NORMAL, &r, &g, &b, &a);
+   efl_text_normal_color_set(text_obj, r, g, b, a);
+}
+
 /* we can't issue the layout's theming code here, cause it assumes an
  * unique edje object, always */
 EOLIAN static Efl_Ui_Theme_Apply
@@ -865,6 +880,8 @@ _efl_ui_text_efl_ui_widget_theme_apply(Eo *obj, Efl_Ui_Text_Data *sd)
    // This assumes the following inheritance: my_class -> layout -> widget ...
    theme_apply = efl_ui_widget_theme_apply(efl_cast(obj, EFL_UI_WIDGET_CLASS));
    if (!theme_apply) return EFL_UI_THEME_APPLY_FAILED;
+
+   _ui_text_theme_classes_update(sd->entry_edje, sd->text_obj);
 
    efl_event_freeze(obj);
 
@@ -3035,15 +3052,12 @@ _efl_ui_text_efl_object_constructor(Eo *obj, Efl_Ui_Text_Data *sd)
      CRI("Failed tp set layout!");
 
    text_obj = efl_add(EFL_UI_INTERNAL_TEXT_INTERACTIVE_CLASS, obj);
-
    efl_composite_attach(obj, text_obj);
    sd->text_obj = text_obj;
 
    // FIXME: use the theme, when a proper theming option is available
    //  (possibly, text_classes).
    // For now, set this for easier setup
-   efl_text_font_set(text_obj, "Sans", 12);
-   efl_text_normal_color_set(text_obj, 255, 255, 255, 255);
    efl_ui_text_interactive_editable_set(obj, EINA_FALSE);
 
    sd->single_line = !efl_text_multiline_get(text_obj);

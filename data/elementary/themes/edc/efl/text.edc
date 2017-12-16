@@ -1,3 +1,11 @@
+color_classes {
+    color_class { name: "efl/text/text/default"; color: 255 255 255 255; }
+}
+
+text_classes {
+    text_class { name: "efl/text/text/default"; font: "Sans"; size: 10; }
+}
+
 group { "efl/text/scroller";
    inherit: "elm/scroller/base/default";
    image: "bg_glow_in.png" COMP;
