@@ -133,5 +133,22 @@ interface Efl.Text.Format {
             format: string; [[The format]]
          }
       }
+      item_insert {
+         [[Inserts a object item at specified position.
+
+           This adds a placeholder to be queried by higher-level code,
+           which in turn place graphics on top of it. It essentially places an
+           OBJECT REPLACEMENT CHARACTER and set a special annotation to it.
+         ]]
+         legacy: null;
+         params {
+            cur: ptr(Efl.Text.Cursor.Cursor); [[Cursor object]]
+            @in item: string;   [[Item key to be used in higher-up
+                                  code to query and decided what image, emoticon
+                                  etc. to embed.]]
+            @in format: string; [[Size format of the inserted item.
+                                  This hints how to size the item in the text.]]
+         }
+      }
    }
 }

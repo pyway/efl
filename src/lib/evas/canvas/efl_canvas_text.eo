@@ -349,9 +349,9 @@ class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties,
       Efl.Text.Annotate.item_geometry_get;
       Efl.Text.Annotate.annotation_positions_get;
       Efl.Text.Annotate.cursor_item_annotation { get; }
-      Efl.Text.Annotate.cursor_item_insert;
       Efl.Text.Markup.markup { set; get; }
       Efl.Text.Markup.cursor_markup_insert;
+      Efl.Text.Format.item_insert;
       Efl.Gfx.scale { set; }
    }
    events {
