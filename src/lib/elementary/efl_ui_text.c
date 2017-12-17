@@ -139,7 +139,7 @@ struct _Anchor
 {
    Eo                    *obj;
    char                  *name;
-   Efl_Text_Annotate_Annotation *annotation;
+   //Efl_Text_Annotate_Annotation *annotation;
    Eina_List             *sel;
    Eina_Bool              item : 1;
 };
@@ -4263,137 +4263,30 @@ _efl_ui_text_efl_access_text_range_extents_get(Eo *obj, Efl_Ui_Text_Data *pd EIN
 }
 
 static Efl_Access_Text_Attribute*
-_textblock_node_format_to_atspi_text_attr(Eo *obj,
-      Efl_Text_Annotate_Annotation *annotation)
+_textblock_node_format_to_atspi_text_attr(Eo *obj)
 {
-   Efl_Access_Text_Attribute *ret;
-   const char *txt;
-
-   txt = efl_text_annotation_get(obj, annotation);
-   if (!txt) return NULL;
-
-   ret = calloc(1, sizeof(Efl_Access_Text_Attribute));
-   if (!ret) return NULL;
-
-   ret->value = eina_stringshare_add(txt);
-   int size = strlen(txt);
-   ret->name = eina_stringshare_add_length(txt, size);
-
-   return ret;
+   // FIXME: re-implement
+   return NULL;
 }
 
 EOLIAN static Eina_Bool
 _efl_ui_text_efl_access_text_attribute_get(Eo *obj, Efl_Ui_Text_Data *_pd EINA_UNUSED, const char *attr_name EINA_UNUSED, int *start_offset, int *end_offset, char **value)
 {
-   Evas_Textblock_Cursor *cur1, *cur2;
-   Efl_Access_Text_Attribute *attr;
-   Eina_Iterator *annotations;
-   Efl_Text_Annotate_Annotation *an;
-
-   cur1 = evas_object_textblock_cursor_new(obj);
-   if (!cur1) return EINA_FALSE;
-
-   cur2 = evas_object_textblock_cursor_new(obj);
-   if (!cur2)
-     {
-        evas_textblock_cursor_free(cur1);
-        return EINA_FALSE;
-     }
-
-   evas_textblock_cursor_pos_set(cur1, *start_offset);
-   evas_textblock_cursor_pos_set(cur2, *end_offset);
-
-   annotations = efl_text_range_annotations_get(obj, cur1, cur2);
-
-   evas_textblock_cursor_free(cur1);
-   evas_textblock_cursor_free(cur2);
-
-   if (!annotations) return EINA_FALSE;
-
-   EINA_ITERATOR_FOREACH(annotations, an)
-     {
-        attr = _textblock_node_format_to_atspi_text_attr(obj, an);
-        if (!attr) continue;
-        if (!strcmp(attr->name, attr_name))
-          {
-             *value = attr->value ? strdup(attr->value) : NULL;
-             elm_atspi_text_text_attribute_free(attr);
-             return EINA_TRUE;
-          }
-        elm_atspi_text_text_attribute_free(attr);
-     }
-   eina_iterator_free(annotations);
-
+   // FIXME: reimplement
    return EINA_FALSE;
 }
 
 EOLIAN static Eina_List*
 _efl_ui_text_efl_access_text_attributes_get(Eo *obj, Efl_Ui_Text_Data *pd EINA_UNUSED, int *start_offset, int *end_offset)
 {
-   Evas_Textblock_Cursor *cur1, *cur2;
-   Eina_List *ret = NULL;
-   Efl_Access_Text_Attribute *attr;
-   Eina_Iterator *annotations;
-   Efl_Text_Annotate_Annotation *an;
-
-   cur1 = evas_object_textblock_cursor_new(obj);
-   if (!cur1) return NULL;
-
-   cur2 = evas_object_textblock_cursor_new(obj);
-   if (!cur2)
-     {
-        evas_textblock_cursor_free(cur1);
-        return NULL;
-     }
-
-   evas_textblock_cursor_pos_set(cur1, *start_offset);
-   evas_textblock_cursor_pos_set(cur2, *end_offset);
-
-   annotations = efl_text_range_annotations_get(obj, cur1, cur2);
-
-   evas_textblock_cursor_free(cur1);
-   evas_textblock_cursor_free(cur2);
-
-   if (!annotations) return NULL;
-
-   EINA_ITERATOR_FOREACH(annotations, an)
-     {
-        attr = _textblock_node_format_to_atspi_text_attr(obj, an);
-        if (!attr) continue;
-        ret = eina_list_append(ret, attr);
-     }
-   eina_iterator_free(annotations);
-
-   return ret;
+   // FIXME: reimplement
+   return NULL;
 }
 
 EOLIAN static Eina_List*
 _efl_ui_text_efl_access_text_default_attributes_get(Eo *obj, Efl_Ui_Text_Data *_pd EINA_UNUSED)
 {
-   Eina_List *ret = NULL;
-   Efl_Access_Text_Attribute *attr;
-   Efl_Text_Cursor_Cursor *start, *end;
-   Eina_Iterator *annotations;
-   Efl_Text_Annotate_Annotation *an;
-
-   /* Retrieve all annotations in the text. */
-   start = efl_text_cursor_new(obj);
-   end = efl_text_cursor_new(obj);
-
-   efl_text_cursor_paragraph_first(obj, start);
-   efl_text_cursor_paragraph_last(obj, end);
-
-   annotations = efl_text_range_annotations_get(obj, start, end);
-
-   EINA_ITERATOR_FOREACH(annotations, an)
-     {
-        attr = _textblock_node_format_to_atspi_text_attr(obj, an);
-        if (!attr) continue;
-        ret = eina_list_append(ret, attr);
-     }
-   eina_iterator_free(annotations);
-
-   return ret;
+   return NULL;
 }
 
 EOLIAN static Eina_Bool
@@ -4848,75 +4741,8 @@ _anchor_format_parse(const char *item)
 static void
 _anchors_create(Eo *obj, Efl_Ui_Text_Data *sd)
 {
-   Eina_Iterator *it;
-   Anchor *an = NULL;
-   Efl_Text_Cursor_Cursor *start, *end;
-   Efl_Text_Annotate_Annotation *anchor;
-
-   Eo *text_obj = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
-   _anchors_clear_all(obj, sd);
-
-   start = efl_text_cursor_new(text_obj);
-   end = efl_text_cursor_new(text_obj);
-
-   /* Retrieve all annotations in the text. */
-   efl_text_cursor_paragraph_first(obj, start);
-   efl_text_cursor_paragraph_last(obj, end);
-
-   it = efl_text_range_annotations_get(obj, start, end);
-   efl_text_cursor_free(text_obj, start);
-   efl_text_cursor_free(text_obj, end);
-
-   EINA_ITERATOR_FOREACH(it, anchor)
-     {
-        Eina_Bool is_anchor = EINA_FALSE;
-        Eina_Bool is_item = EINA_FALSE;
-
-        if (efl_text_annotation_is_item(obj, anchor))
-          {
-             is_anchor = EINA_TRUE;
-             is_item = EINA_TRUE;
-          }
-        else if (!strncmp(efl_text_annotation_get(obj, anchor), "a ", 2))
-          {
-             is_anchor = EINA_TRUE;
-          }
-
-        if (is_anchor)
-          {
-             const char *p;
-             const char *item_str = efl_text_annotation_get(obj, anchor);
-
-             an = calloc(1, sizeof(Anchor));
-             if (!an)
-                break;
-
-             an->obj = obj;
-             an->annotation = anchor;
-             an->item = is_item;
-             p = strstr(item_str, "href=");
-             if (p)
-               {
-                  an->name = _anchor_format_parse(p);
-               }
-             sd->anchors = eina_list_append(sd->anchors, an);
-          }
-     }
-   eina_iterator_free(it);
+   // FIXME: reimplement
 }
-
-#if 0
-static Eina_Bool
-_is_anchors_outside_viewport(Evas_Coord oxy, Evas_Coord axy, Evas_Coord awh,
-                                                 Evas_Coord vxy, Evas_Coord vwh)
-{
-   if (((oxy + axy + awh) < vxy) || ((oxy + axy) > vwh))
-     {
-        return EINA_TRUE;
-     }
-   return EINA_FALSE;
-}
-#endif
 
 static void
 _text_anchor_mouse_down_cb(void *data, Evas *e EINA_UNUSED,
@@ -4996,8 +4822,6 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
                     {
                        rect->obj = ob;
 
-                       efl_text_item_geometry_get(an->obj,
-                             an->annotation, &cx, &cy, &cw, &ch);
                        evas_object_move(rect->obj, x + cx, y + cy);
                        evas_object_resize(rect->obj, cw, ch);
                     }
@@ -5013,8 +4837,6 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
 
              start = efl_text_cursor_new(o);
              end = efl_text_cursor_new(o);
-             efl_text_annotation_positions_get(o, an->annotation,
-                   start, end);
 
              range = efl_canvas_text_range_geometry_get(o, start, end);
              range_list = eina_iterator_container_get(range);
@@ -5031,34 +4853,6 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
                     }
 
                   r = range_list->data;
-#if 0
-                  Eina_Rectangle *r_last;
-                  r_last = eina_list_last_data_get(range_list);
-                  if (r->y != r_last->y)
-                    {
-                       /* For multiple range */
-                       r->h = r->y + r_last->y + r_last->h;
-                    }
-#endif
-                  /* For vertically layout entry */
-#if 0
-                  if (_is_anchors_outside_viewport(y, r->y, r->h, vy, tvh))
-                    {
-                       EINA_LIST_FREE(range, r)
-                         free(r);
-                       continue;
-                    }
-                  else
-                    {
-                       /* XXX: Should consider for horizontal entry but has
-                        * very minimal usage. Probably we should get the min x
-                        * and max w for range and then decide whether it is in
-                        * the viewport or not. Unnecessary calculation for this
-                        * minimal usage. Please test with large number of anchors
-                        * after implementing it, if its needed to be.
-                        */
-                    }
-#endif
 
                   /* XXX: the iterator isn't powerful enought to iterate more
                    * than once on the list. We have to resort to this workaround
@@ -5084,11 +4878,6 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
                        rect->obj = ob;
                        evas_object_event_callback_add(ob, EVAS_CALLBACK_MOUSE_DOWN, _text_anchor_mouse_down_cb, an);
                        evas_object_event_callback_add(ob, EVAS_CALLBACK_MOUSE_UP, _text_anchor_mouse_up_cb, an);
-#if 0
-                       evas_object_event_callback_add(ob, EVAS_CALLBACK_MOUSE_MOVE, _text_anchor_mouse_move_cb, an);
-                       evas_object_event_callback_add(ob, EVAS_CALLBACK_MOUSE_IN, _text_anchor_mouse_in_cb, an);
-                       evas_object_event_callback_add(ob, EVAS_CALLBACK_MOUSE_OUT, _text_anchor_mouse_out_cb, an);
-#endif
                     }
                }
 
@@ -5096,19 +4885,6 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
              EINA_LIST_FOREACH(range_list, rl, r)
                {
                   rect = ll->data;
-
-#if 0
-                  if (_is_anchors_outside_viewport(y, r->y, r->h, vy, tvh) ||
-                      _is_anchors_outside_viewport(x, r->x, r->w, vx, tvw))
-                    {
-                       range = eina_list_remove_list(range, range);
-                       free(r);
-                       evas_object_hide(sel->obj_bg);
-                       evas_object_hide(sel->obj_fg);
-                       evas_object_hide(sel->obj);
-                       continue;
-                    }
-#endif
 
                   if (rect->obj_bg)
                     {

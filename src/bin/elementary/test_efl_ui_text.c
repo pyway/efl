@@ -17,7 +17,7 @@ _apply_style(Eo *obj, size_t start_pos, size_t end_pos, const char *style)
    efl_text_cursor_position_set(obj, start, start_pos);
    efl_text_cursor_position_set(obj, end, end_pos);
 
-   efl_text_annotation_insert(obj, start, end, style);
+//   efl_text_annotation_insert(obj, start, end, style);
 
    efl_text_cursor_free(obj, start);
    efl_text_cursor_free(obj, end);
@@ -224,7 +224,7 @@ test_efl_ui_text(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *eve
    efl_text_cursor_position_set(en, main_cur, 5);
    efl_text_cursor_position_set(en, cur, 20);
 
-   efl_text_annotation_insert(en, main_cur, cur, "a href=#hello");
+//   efl_text_annotation_insert(en, main_cur, cur, "a href=#hello");
 
    efl_ui_text_interactive_editable_set(en, EINA_TRUE);
    efl_ui_text_scrollable_set(en, EINA_TRUE);
