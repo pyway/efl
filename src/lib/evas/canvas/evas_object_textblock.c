@@ -15130,8 +15130,8 @@ _efl_canvas_text_efl_text_annotate_range_annotations_get(Eo *eo_obj EINA_UNUSED,
    return _evas_textblock_annotation_iterator_new(lst);
 }
 
-EOLIAN static Efl_Text_Annotate_Annotation *
-_efl_canvas_text_efl_text_annotate_cursor_item_insert(Eo *eo_obj,
+EOLIAN static void
+_efl_canvas_text_efl_text_format_item_insert(Eo *eo_obj,
       Efl_Canvas_Text_Data *o EINA_UNUSED, Efl_Text_Cursor_Cursor *cur,
       const char *item, const char *format)
 {
@@ -15139,12 +15139,10 @@ _efl_canvas_text_efl_text_annotate_cursor_item_insert(Eo *eo_obj,
 
    eina_strbuf_append_printf(buf, "%s href=%s", format, item);
 
-   Efl_Text_Annotate_Annotation *ret =
       _textblock_annotation_insert(cur->obj, o, cur, cur,
             eina_strbuf_string_get(buf), EINA_TRUE);
    eina_strbuf_free(buf);
    efl_event_callback_legacy_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
-   return ret;
 }
 
 EOLIAN static Efl_Text_Annotate_Annotation *
