@@ -99,30 +99,11 @@ interface Efl.Text.Annotate {
            querying the annotation's geometry, as only "item" annotations have
            a geometry.
 
-           see @.item_geometry_get
-
            @since 1.21
          ]]
          legacy: null;
          params {
             annotation: ptr(Efl.Text.Annotate.Annotation); [[Given annotation]]
-         }
-         return: bool; [[$true if given annotation is an object item, $false otherwise]]
-      }
-      item_geometry_get {
-         [[Queries a given object item for its geometry.
-
-           Note that the provided annotation should be an object item type.
-
-           @since 1.18
-         ]]
-         legacy: null;
-         params {
-            @in an: ptr(const(Efl.Text.Annotate.Annotation)); [[Given annotation to query]]
-            @out x: int; [[X coordinate of the annotation]]
-            @out y: int; [[Y coordinate of the annotation]]
-            @out w: int; [[Width of the annotation]]
-            @out h: int; [[Height of the annotation]]
          }
          return: bool; [[$true if given annotation is an object item, $false otherwise]]
       }

@@ -15181,18 +15181,17 @@ _efl_canvas_text_efl_text_annotate_annotation_is_item(Eo *eo_obj EINA_UNUSED,
 }
 
 EOLIAN static Eina_Bool
-_efl_canvas_text_efl_text_annotate_item_geometry_get(Eo *eo_obj, Efl_Canvas_Text_Data *o EINA_UNUSED,
-      const Efl_Text_Annotate_Annotation *an, Evas_Coord *cx, Evas_Coord *cy, Evas_Coord *cw, Evas_Coord *ch)
+_efl_canvas_text_efl_text_format_item_geometry_get(Eo *eo_obj,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Efl_Text_Cursor_Cursor *cur,
+      Evas_Coord *cx, Evas_Coord *cy, Evas_Coord *cw, Evas_Coord *ch)
 {
-   Efl_Text_Cursor_Cursor cur;
-
-   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj,
+         EFL_CANVAS_OBJECT_CLASS);
    evas_object_async_block(obj);
-   _relayout_if_needed(eo_obj, o);
 
-   _evas_textblock_cursor_init(&cur, eo_obj);
-   _textblock_cursor_pos_at_fnode_set(eo_obj, &cur, an->start_node);
-   return _evas_textblock_cursor_format_item_geometry_get(&cur, cx, cy, cw, ch);
+   _relayout_if_needed(eo_obj, o);
+   return _evas_textblock_cursor_format_item_geometry_get(cur, cx, cy, cw, ch);
 }
 
 EOLIAN static void
