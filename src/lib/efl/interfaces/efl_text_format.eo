@@ -150,5 +150,22 @@ interface Efl.Text.Format {
                                   This hints how to size the item in the text.]]
          }
       }
+      item_geometry_get {
+         [[Queries a given object item for its geometry.
+
+           Returns whether the current position is an item.
+
+           @since 1.18
+         ]]
+         legacy: null;
+         params {
+            @in cur: ptr(const(Efl.Text.Cursor.Cursor)); [[Given annotation to query]]
+            @out x: int; [[X coordinate of the annotation]]
+            @out y: int; [[Y coordinate of the annotation]]
+            @out w: int; [[Width of the annotation]]
+            @out h: int; [[Height of the annotation]]
+         }
+         return: bool; [[$true if given annotation is an object item, $false otherwise]]
+      }
    }
 }
