@@ -141,7 +141,11 @@ struct _Anchor
    const char                   *name;
    union
      {
-        Efl_Text_Format_Format *format;
+        struct
+          {
+             Efl_Text_Format_Format *start;
+             Efl_Text_Format_Format *end;
+          } formats;
         Efl_Text_Format_Item *it;
      };
    Eina_List              *sel;
@@ -4700,12 +4704,13 @@ _anchors_clear_all(Evas_Object *o EINA_UNUSED, Efl_Ui_Text_Data *sd)
       io->an = NULL;
 }
 
-static char *
+static const char *
 _anchor_format_parse(const char *item)
 {
    const char *start, *end;
    char *tmp;
    size_t len;
+   const char *ret = NULL;
 
    start = strchr(item, '=');
    if (!start) return NULL;
@@ -4737,8 +4742,9 @@ _anchor_format_parse(const char *item)
    tmp = malloc(len + 1);
    strncpy(tmp, start, len);
    tmp[len] = '\0';
-
-   return tmp;
+   ret = tmp;
+   free(tmp);
+   return eina_stringshare_add(ret);
 }
 
 /* Recreates the anchors in the text. */
@@ -4748,12 +4754,13 @@ _anchors_create(Eo *obj, Efl_Ui_Text_Data *sd)
    // FIXME: reimplement
    // Item anchors - implemented
    // Link anchors - TBA
-   
+
    Eina_Iterator *it;
    Efl_Text_Format_Item *item;
 
    _anchors_clear_all(obj, sd);
 
+   // Item anchors:
    it = efl_text_items_get(obj, NULL, NULL);
 
    EINA_ITERATOR_FOREACH(it, item)
@@ -4772,6 +4779,45 @@ _anchors_create(Eo *obj, Efl_Ui_Text_Data *sd)
         sd->anchors = eina_list_append(sd->anchors, an);
      }
    eina_iterator_free(it);
+
+   // Link anchors
+     {
+        const char *s;
+        Anchor *an = NULL;
+
+        it = efl_text_formats_get(obj, NULL, NULL);
+
+        EINA_ITERATOR_FOREACH(it, item)
+          {
+             if (an && an->formats.start &&
+                   strstr(efl_text_format_string_get(obj, item), "- a"))
+               {
+                  an->formats.end = item;
+                  an = NULL;
+               }
+
+             s = strstr(efl_text_format_string_get(obj, item), "+ a");
+             if (s)
+               {
+                  const char *p;
+
+                  an = calloc(1, sizeof(Anchor));
+                  if (!an)
+                     break;
+
+                  an->formats.start = item;
+
+                  an->obj = obj;
+                  p = strstr(s, "href=");
+
+                  an->name = _anchor_format_parse(p);
+                  sd->anchors = eina_list_append(sd->anchors, an);
+               }
+          }
+        eina_iterator_free(it);
+     }
+
+
 }
 
 static void
@@ -4859,7 +4905,7 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
                     }
                }
           }
-        // for link anchors
+        // for others (link anchors, selections)
         else
           {
              Eina_Iterator *range;
@@ -4869,6 +4915,9 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
 
              start = efl_text_cursor_new(o);
              end = efl_text_cursor_new(o);
+
+             efl_text_at_format_set(o, an->formats.start, start);
+             efl_text_at_format_set(o, an->formats.end, end);
 
              range = efl_canvas_text_range_geometry_get(o, start, end);
              range_list = eina_iterator_container_get(range);

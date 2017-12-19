@@ -226,6 +226,8 @@ test_efl_ui_text(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *eve
    efl_text_cursor_position_set(en, cur, 20);
 
 //   efl_text_annotation_insert(en, main_cur, cur, "a href=#hello");
+   efl_text_format_insert(en, main_cur, "+ a href=#hello");
+   efl_text_format_insert(en, cur, " - a");
 
    efl_ui_text_interactive_editable_set(en, EINA_TRUE);
    efl_ui_text_scrollable_set(en, EINA_TRUE);

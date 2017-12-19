@@ -11612,6 +11612,16 @@ _evas_textblock_cursor_at_format_set(Efl_Text_Cursor_Cursor *cur,
    cur->pos = _evas_textblock_node_format_pos_get(fmt);
 }
 
+EOLIAN Eina_Bool
+_efl_canvas_text_efl_text_format_at_format_set(Eo *eo_obj EINA_UNUSED,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      Efl_Text_Format_Format *format, Efl_Text_Cursor_Cursor *cur)
+{
+   if (cur->obj != eo_obj) return EINA_FALSE;
+   _evas_textblock_cursor_at_format_set(cur, format);
+   return EINA_TRUE;
+}
+
 EAPI void
 evas_textblock_cursor_at_format_set(Evas_Textblock_Cursor *cur, const Evas_Object_Textblock_Node_Format *fmt)
 {
