@@ -221,6 +221,12 @@ typedef struct _Evas_Textblock_Selection_Iterator Evas_Textblock_Selection_Itera
 typedef struct _Efl_Text_Annotate_Annotation_Iterator Efl_Text_Annotate_Annotation_Iterator;
 /**
  * @internal
+ * @typedef Efl_Text_Format_Format_Iterator
+ * A text format iterator.
+ */
+typedef struct _Efl_Text_Format_Format_Iterator Efl_Text_Format_Format_Iterator;
+/**
+ * @internal
  * @typedef Efl_Canvas_Text_Filter
  * A structure holding gfx filter information for a text item
  */
@@ -677,6 +683,13 @@ struct _Efl_Text_Annotate_Annotation_Iterator
    Eina_Iterator                       iterator; /**< Eina Iterator. */
    Eina_List                           *list; /**< Head of list. */
    Eina_List                           *current; /**< Current node in loop. */
+};
+
+struct _Efl_Text_Format_Format_Iterator
+{
+   Eina_Iterator                       iterator; /**< Eina Iterator. */
+   Efl_Text_Format_Format              *list; /**< Head of list. */
+   Efl_Text_Format_Format              *current; /**< Current node in loop. */
 };
 
 /* private methods for textblock objects */
@@ -4758,6 +4771,9 @@ _layout_do_format(const Evas_Object *obj, Ctxt *c,
                }
           }
 
+        fmt = _layout_format_push(c, fmt, n);
+        handled = 1;
+
         if (create_item)
           {
              fi = _layout_format_item_add(c, n, s, fmt);
@@ -4771,8 +4787,6 @@ _layout_do_format(const Evas_Object *obj, Ctxt *c,
              fi->parent.h = h;
           }
         /* Not sure if it's the best handling, but will do it for now. */
-        fmt = _layout_format_push(c, fmt, n);
-        handled = 1;
      }
 
    if (!handled)
@@ -9475,7 +9489,8 @@ _evas_textblock_format_is_visible(Evas_Object_Textblock_Node_Format *fnode,
              fnode->anchor = ANCHOR_A;
           }
         else if (is_opener &&
-              ((fnode->annotation && fnode->annotation->is_item) ||
+              (is_item ||
+               (fnode->annotation && fnode->annotation->is_item) ||
                  (!strncmp(item, "item", itlen) && (itlen >= 4))))
           {
              fnode->anchor = ANCHOR_ITEM;
@@ -10792,12 +10807,13 @@ _evas_textblock_cursor_format_append(Efl_Text_Cursor_Cursor *cur,
    return is_visible;
 }
 
-EOLIAN Eina_Bool
+EOLIAN void
 _efl_canvas_text_efl_text_format_format_insert(Eo *eo_obj EINA_UNUSED,
-      Efl_Text_Cursor_Cursor *cur,Efl_Canvas_Text_Data *o EINA_UNUSED,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      Efl_Text_Cursor_Cursor *cur,
       const char *format)
 {
-   return _evas_textblock_cursor_format_append(cur, format, NULL, EINA_FALSE);
+   _evas_textblock_cursor_format_append(cur, format, NULL, EINA_FALSE);
 }
 
 EAPI Eina_Bool
@@ -10824,6 +10840,7 @@ _evas_textblock_cursor_format_prepend(Efl_Text_Cursor_Cursor *cur, const char *f
 
    return is_visible;
 }
+
 
 EAPI Eina_Bool
 evas_textblock_cursor_format_prepend(Evas_Textblock_Cursor *cur, const char *format)
@@ -11383,6 +11400,14 @@ evas_textblock_cursor_paragraph_text_length_get(const Evas_Textblock_Cursor *cur
       return len;
 }
 
+EOLIAN static const Efl_Text_Format_Format *
+_efl_canvas_text_efl_text_format_format_get(Eo *eo_obj,
+      Efl_Canvas_Text_Data *o EINA_UNUSED, const Efl_Text_Cursor_Cursor *cur)
+{
+   if (!cur || (cur->obj != eo_obj)) return NULL;
+   return evas_textblock_cursor_format_get(cur);
+}
+
 EAPI const Evas_Object_Textblock_Node_Format *
 evas_textblock_cursor_format_get(const Evas_Textblock_Cursor *cur)
 {
@@ -11391,6 +11416,149 @@ evas_textblock_cursor_format_get(const Evas_Textblock_Cursor *cur)
    evas_object_async_block(obj);
    TB_NULL_CHECK(cur->node, NULL);
    return _evas_textblock_cursor_node_format_at_pos_get(cur);
+}
+
+EOLIAN static const char *
+_efl_canvas_text_efl_text_format_format_string_get(Eo *eo_obj EINA_UNUSED,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Efl_Text_Format_Format *format)
+{
+   return evas_textblock_node_format_text_get(format);
+}
+
+/**
+  * @internal
+  * Returns the value of the current data of list node,
+  * and goes to the next list node.
+  *
+  * @param it the iterator.
+  * @param data the data of the current list node.
+  * @return EINA_FALSE if unsuccessful. Otherwise, returns EINA_TRUE.
+  */
+static Eina_Bool
+_evas_textblock_format_iterator_next(Efl_Text_Format_Format_Iterator *it, void **data)
+{
+   if (!it->current)
+     return EINA_FALSE;
+
+   *data = it->current;
+   it->current = (Efl_Text_Format_Format *) EINA_INLIST_GET(it->current)->next;
+
+   return EINA_TRUE;
+}
+
+/**
+  * @internal
+  * Returns the value of the current data of list node,
+  * and goes to the next list node.
+  *
+  * @param it the iterator.
+  * @param data the data of the current list node.
+  * @return EINA_FALSE if unsuccessful. Otherwise, returns EINA_TRUE.
+  */
+
+static Eina_Bool
+_evas_textblock_item_iterator_next(Efl_Text_Format_Format_Iterator *it, void **data)
+{
+   if (!it->current)
+     return EINA_FALSE;
+
+   while((*data = it->current))
+     {
+        Efl_Text_Format_Format *fmt = *data;
+        if (fmt->anchor == ANCHOR_ITEM) break;
+        it->current = (Efl_Text_Format_Format *)
+           EINA_INLIST_GET(it->current)->next;
+     }
+
+   if (!it->current) return EINA_FALSE;
+
+   it->current = (Efl_Text_Format_Format *) EINA_INLIST_GET(it->current)->next;
+
+   return EINA_TRUE;
+}
+
+/**
+  * @internal
+  * Frees the format iterator.
+  * @param it the iterator to free
+  * @return EINA_FALSE if unsuccessful. Otherwise, returns EINA_TRUE.
+  */
+static Eina_Bool
+_evas_textblock_format_iterator_free(Efl_Text_Format_Format_Iterator *it)
+{
+   EINA_MAGIC_SET(&it->iterator, 0);
+   it->current = NULL;
+   return EINA_TRUE;
+}
+
+/**
+  * @internal
+  * Creates newly allocated  iterator associated to a list.
+  * @param list The list.
+  * @return If the memory cannot be allocated, NULL is returned.
+  * Otherwise, a valid iterator is returned.
+  */
+Eina_Iterator *
+_evas_textblock_format_iterator_new(Efl_Text_Format_Format *list,
+      Eina_Bool item)
+{
+   Efl_Text_Format_Format_Iterator *it;
+
+   it = calloc(1, sizeof(Efl_Text_Format_Format_Iterator));
+   if (!it) return NULL;
+
+   EINA_MAGIC_SET(&it->iterator, EINA_MAGIC_ITERATOR);
+   it->list = list;
+   it->current = list;
+
+   it->iterator.version = EINA_ITERATOR_VERSION;
+   if (item)
+     {
+        it->iterator.next = FUNC_ITERATOR_NEXT(
+              _evas_textblock_item_iterator_next);
+     }
+   else
+     {
+        it->iterator.next = FUNC_ITERATOR_NEXT(
+              _evas_textblock_format_iterator_next);
+     }
+   it->iterator.free = FUNC_ITERATOR_FREE(
+         _evas_textblock_format_iterator_free);
+
+   return &it->iterator;
+}
+
+EOLIAN static Eina_Iterator *
+_efl_canvas_text_efl_text_format_formats_get(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Evas_Textblock_Cursor *start EINA_UNUSED, const Evas_Textblock_Cursor *end EINA_UNUSED)
+{
+   // FIXME: currently ignores start and end and queries whole text
+   return _evas_textblock_format_iterator_new(o->format_nodes, EINA_FALSE);
+}
+
+EOLIAN static Eina_Iterator *
+_efl_canvas_text_efl_text_format_items_get(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Evas_Textblock_Cursor *start EINA_UNUSED, const Evas_Textblock_Cursor *end EINA_UNUSED)
+{
+   // FIXME: currently ignores start and end and queries whole text
+   return _evas_textblock_format_iterator_new(o->format_nodes, EINA_TRUE);
+}
+
+EOLIAN static const char *
+_efl_canvas_text_efl_text_format_item_string_get(Eo *eo_obj EINA_UNUSED,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Efl_Text_Format_Format *format)
+{
+   const char *item, *tmp;
+   if (!format) return NULL;
+   tmp = evas_textblock_node_format_text_get(format);
+   item = strstr(tmp, "href=");
+   if (item)
+     {
+        item += 5;
+     }
+   return item;
 }
 
 EAPI const char *
@@ -15136,10 +15304,11 @@ _efl_canvas_text_efl_text_format_item_insert(Eo *eo_obj,
       const char *item, const char *format)
 {
    Eina_Strbuf *buf = eina_strbuf_new();
+   Efl_Text_Annotate_Annotation *an;
 
    eina_strbuf_append_printf(buf, "%s href=%s", format, item);
 
-      _textblock_annotation_insert(cur->obj, o, cur, cur,
+   an = _textblock_annotation_insert(cur->obj, o, cur, cur,
             eina_strbuf_string_get(buf), EINA_TRUE);
    eina_strbuf_free(buf);
    efl_event_callback_legacy_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
@@ -15183,15 +15352,40 @@ _efl_canvas_text_efl_text_annotate_annotation_is_item(Eo *eo_obj EINA_UNUSED,
 EOLIAN static Eina_Bool
 _efl_canvas_text_efl_text_format_item_geometry_get(Eo *eo_obj,
       Efl_Canvas_Text_Data *o EINA_UNUSED,
-      const Efl_Text_Cursor_Cursor *cur,
+      const Efl_Text_Format_Item *item,
       Evas_Coord *cx, Evas_Coord *cy, Evas_Coord *cw, Evas_Coord *ch)
 {
-   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj,
-         EFL_CANVAS_OBJECT_CLASS);
+   _relayout_if_needed(eo_obj, o);
+   Evas_Object_Textblock_Node_Text *text_node;
+
+   Evas_Object_Protected_Data *obj = efl_data_scope_get(eo_obj, EFL_CANVAS_OBJECT_CLASS);
    evas_object_async_block(obj);
 
+   if (!item) return EINA_FALSE;
+
    _relayout_if_needed(eo_obj, o);
-   return _evas_textblock_cursor_format_item_geometry_get(cur, cx, cy, cw, ch);
+
+   text_node = item->text_node;
+   if (text_node && text_node->par)
+     {
+        Evas_Object_Textblock_Item *it;
+        Eina_List *l;
+        EINA_LIST_FOREACH(text_node->par->logical_items, l, it)
+          {
+             if (it->format->fnode == item)
+               {
+                  Evas_Object_Textblock_Line *ln;
+                  Evas_Object_Textblock_Format_Item *fi = _ITEM_FORMAT(it);
+                  ln = it->ln;
+                  if (cx) *cx = ln->x + it->x;
+                  if (cy) *cy = ln->par->y + ln->y + ln->baseline + fi->y;
+                  if (cw) *cw = it->w;
+                  if (ch) *ch = it->h;
+                  return EINA_TRUE;
+               }
+          }
+     }
+   return EINA_FALSE;
 }
 
 EOLIAN static void

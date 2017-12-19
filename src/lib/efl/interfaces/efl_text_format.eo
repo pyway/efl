@@ -159,13 +159,77 @@ interface Efl.Text.Format {
          ]]
          legacy: null;
          params {
-            @in cur: ptr(const(Efl.Text.Cursor.Cursor)); [[Given annotation to query]]
+            @in item: ptr(const(Efl.Text.Format.Item)); [[Item to query]]
             @out x: int; [[X coordinate of the annotation]]
             @out y: int; [[Y coordinate of the annotation]]
             @out w: int; [[Width of the annotation]]
             @out h: int; [[Height of the annotation]]
          }
-         return: bool; [[$true if given annotation is an object item, $false otherwise]]
+         return: bool; [[$true if query was succcessful, $false otherwise]]
+      }
+      format_get {
+         [[Inserts a format at specified position.
+
+           Given a cursor, inserts a format node in its position. This position
+           can be queried to get the format node's handle.
+         ]]
+         legacy: null;
+         params {
+            @in cur: ptr(const(Efl.Text.Cursor.Cursor)); [[Cursor object]]
+         }
+         return: ptr(const(Efl.Text.Format.Format)); [[Format handle]]
+      }
+      format_string_get {
+         [[Inserts a format at specified position.
+
+           Given a cursor, inserts a format node in its position. This position
+           can be queried to get the format node's handle.
+         ]]
+         legacy: null;
+         params {
+            @in cur: ptr(const(Efl.Text.Format.Format)); [[Cursor object]]
+         }
+         return: string; [[The format description]]
+      }
+      formats_get {
+         [[Returns an iterator of all the handles in a range.
+
+           If $start is $null, start from beginning of the text.
+           If $end is $null, end at end of the text.
+           If both $null, return for the whole text.
+
+           @since 1.21
+         ]]
+         legacy: null;
+         params {
+              @in start: ptr(const(Efl.Text.Cursor.Cursor)); [[Start of range]]
+              @in end:   ptr(const(Efl.Text.Cursor.Cursor)); [[End of range]]
+         }
+         return: iterator<ptr(Efl.Text.Format.Format)> @owned; [[Iterator of format handles]]
+      }
+      items_get {
+         [[Returns an iterator of all the item handles in a range.
+
+           If $start is $null, start from beginning of the text.
+           If $end is $null, end at end of the text.
+           If both $null, return for the whole text.
+
+           @since 1.21
+         ]]
+         legacy: null;
+         params {
+              @in start: ptr(const(Efl.Text.Cursor.Cursor)); [[Start of range]]
+              @in end:   ptr(const(Efl.Text.Cursor.Cursor)); [[End of range]]
+         }
+         return: iterator<ptr(Efl.Text.Format.Item)> @owned; [[Iterator of item handles]]
+      }
+      item_string_get {
+         [[Gets the item string]]
+         legacy: null;
+         params {
+            @in cur: ptr(const(Efl.Text.Format.Item)); [[Cursor object]]
+         }
+         return: string; [[The item string]]
       }
    }
 }

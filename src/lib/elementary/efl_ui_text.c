@@ -137,11 +137,15 @@ struct _Efl_Ui_Text_Data
 
 struct _Anchor
 {
-   Eo                    *obj;
-   char                  *name;
-   //Efl_Text_Annotate_Annotation *annotation;
-   Eina_List             *sel;
-   Eina_Bool              item : 1;
+   Eo                     *obj;
+   const char                   *name;
+   union
+     {
+        Efl_Text_Format_Format *format;
+        Efl_Text_Format_Item *it;
+     };
+   Eina_List              *sel;
+   Eina_Bool               item : 1;
 };
 
 struct _Item_Obj
@@ -4662,7 +4666,7 @@ _anchors_clear(Eina_List **_list)
              free(sel);
              an->sel = eina_list_remove_list(an->sel, an->sel);
           }
-        free(an->name);
+        eina_stringshare_del(an->name);
         free(an);
         list = eina_list_remove_list(list, list);
      }
@@ -4729,6 +4733,32 @@ static void
 _anchors_create(Eo *obj, Efl_Ui_Text_Data *sd)
 {
    // FIXME: reimplement
+   // Item anchors - implemented
+   // Link anchors - TBA
+   
+   Eina_Iterator *it;
+   Efl_Text_Format_Item *item;
+
+   _anchors_clear_all(obj, sd);
+
+   it = efl_text_items_get(obj, NULL, NULL);
+
+   EINA_ITERATOR_FOREACH(it, item)
+     {
+        Anchor *an;
+
+        an = calloc(1, sizeof(Anchor));
+        if (!an)
+           break;
+
+        an->obj = obj;
+        an->item = EINA_TRUE;
+        an->it = item;
+        an->name = eina_stringshare_add(
+              efl_text_item_string_get(sd->text_obj, item));
+        sd->anchors = eina_list_append(sd->anchors, an);
+     }
+   eina_iterator_free(it);
 }
 
 static void
@@ -4809,6 +4839,8 @@ _anchors_update(Eo *o, Efl_Ui_Text_Data *sd)
                     {
                        rect->obj = ob;
 
+                       efl_text_item_geometry_get(an->obj, an->it,
+                             &cx, &cy, &cw, &ch);
                        evas_object_move(rect->obj, x + cx, y + cy);
                        evas_object_resize(rect->obj, cw, ch);
                     }

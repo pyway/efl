@@ -352,6 +352,12 @@ class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties,
       Efl.Text.Markup.cursor_markup_insert;
       Efl.Text.Format.item_insert;
       Efl.Text.Format.item_geometry_get;
+      Efl.Text.Format.format_insert;
+      Efl.Text.Format.format_get;
+      Efl.Text.Format.format_string_get;
+      Efl.Text.Format.formats_get;
+      Efl.Text.Format.items_get;
+      Efl.Text.Format.item_string_get;
       Efl.Gfx.scale { set; }
    }
    events {
