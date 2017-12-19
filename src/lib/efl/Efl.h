@@ -55,6 +55,8 @@ typedef struct tm Efl_Time;
 
 typedef struct _Efl_Text_Cursor_Cursor Efl_Text_Cursor_Cursor;
 typedef struct _Efl_Text_Annotate_Annotation Efl_Text_Annotate_Annotation;
+typedef struct _Evas_Textblock_Node_Format Efl_Text_Format_Format;
+typedef struct _Evas_Textblock_Node_Format Efl_Text_Format_Item;
 
 #ifdef EFL_BETA_API_SUPPORT
 

@@ -9,18 +9,19 @@
 static void
 _apply_style(Eo *obj, size_t start_pos, size_t end_pos, const char *style)
 {
-   Efl_Text_Cursor_Cursor *start, *end;
+   Efl_Text_Cursor_Cursor *cur;
+   char buf[256];
 
-   start = efl_text_cursor_new(obj);
-   end = efl_text_cursor_new(obj);
+   cur = efl_text_cursor_new(obj);
 
-   efl_text_cursor_position_set(obj, start, start_pos);
-   efl_text_cursor_position_set(obj, end, end_pos);
-
-//   efl_text_annotation_insert(obj, start, end, style);
-
-   efl_text_cursor_free(obj, start);
-   efl_text_cursor_free(obj, end);
+   efl_text_cursor_position_set(obj, cur, start_pos);
+   sprintf(buf, "+ %s", style);
+   efl_text_format_insert(obj, cur, buf);
+   efl_text_cursor_position_set(obj, cur, end_pos);
+   efl_text_cursor_char_next(obj, cur);
+   sprintf(buf, "- %s", style);
+   efl_text_format_insert(obj, cur, buf);
+   efl_text_cursor_free(obj, cur);
 }
 
 static Eo *
@@ -52,7 +53,7 @@ test_efl_ui_text_label(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, voi
    en = _create_label(win, bx);
    efl_text_set(en, "This is a\t small label");
    //                012345678901234567890
-   _apply_style(en, 0, 21, "font_size=12 font_weight=bold");
+   _apply_style(en, 0, 21, "font_size=12");
    efl_text_halign_set(en, 0.5);
    efl_text_font_weight_set(en, EFL_TEXT_FONT_WEIGHT_BOLD);
 
@@ -60,8 +61,8 @@ test_efl_ui_text_label(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, voi
    efl_text_halign_set(en, 0.5);
    efl_text_set(en, "This is a text. Is also has\n"
          "newlines. There are several styles applied.");
-   _apply_style(en, 40, 45, "font_weight=bold color=#ff0");
-   _apply_style(en, 52, 58, "font_weight=italic color=#f00");
+   _apply_style(en, 40, 45, "font_size=20 font_weight=bold color=#ff0");
+   _apply_style(en, 52, 58, "font_style=italic color=#f00");
    efl_text_multiline_set(en, EINA_TRUE);
 
    en = _create_label(win, bx);

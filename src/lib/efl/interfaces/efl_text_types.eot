@@ -23,3 +23,7 @@ type @extern Efl.Text.Annotate.Annotation: __undefined_type; [[EFL text annotati
 
 type @extern Efl.Text.Cursor.Cursor: __undefined_type; [[Text cursor data structure]]
 
+type @extern Efl.Text.Format.Format: __undefined_type; [[EFL text format handle]]
+type @extern Efl.Text.Format.Item: __undefined_type; [[EFL text item handle]]
+
+
