@@ -231,5 +231,15 @@ interface Efl.Text.Format {
          }
          return: string; [[The item string]]
       }
+      at_format_set {
+         [[Sets cursor position at given format]]
+         legacy: null;
+         params {
+            @in format: ptr(Efl.Text.Format.Format); [[Format to set to]]
+            @in cur: ptr(Efl.Text.Cursor.Cursor); [[Cursor to set]]
+         }
+         return: bool; [[$true if successful, $false otherwise]]
+
+      }
    }
 }
