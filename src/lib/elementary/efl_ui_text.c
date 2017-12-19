@@ -4271,28 +4271,34 @@ _efl_ui_text_efl_access_text_range_extents_get(Eo *obj, Efl_Ui_Text_Data *pd EIN
 }
 
 static Efl_Access_Text_Attribute*
-_textblock_node_format_to_atspi_text_attr(Eo *obj)
+_textblock_node_format_to_atspi_text_attr(Eo *obj EINA_UNUSED)
 {
    // FIXME: re-implement
    return NULL;
 }
 
 EOLIAN static Eina_Bool
-_efl_ui_text_efl_access_text_attribute_get(Eo *obj, Efl_Ui_Text_Data *_pd EINA_UNUSED, const char *attr_name EINA_UNUSED, int *start_offset, int *end_offset, char **value)
+_efl_ui_text_efl_access_text_attribute_get(Eo *obj EINA_UNUSED,
+      Efl_Ui_Text_Data *_pd EINA_UNUSED, const char *attr_name EINA_UNUSED,
+      int *start_offset EINA_UNUSED, int *end_offset EINA_UNUSED,
+      char **value EINA_UNUSED)
 {
    // FIXME: reimplement
    return EINA_FALSE;
 }
 
 EOLIAN static Eina_List*
-_efl_ui_text_efl_access_text_attributes_get(Eo *obj, Efl_Ui_Text_Data *pd EINA_UNUSED, int *start_offset, int *end_offset)
+_efl_ui_text_efl_access_text_attributes_get(Eo *obj EINA_UNUSED, 
+      Efl_Ui_Text_Data *pd EINA_UNUSED,
+      int *start_offset EINA_UNUSED, int *end_offset EINA_UNUSED)
 {
    // FIXME: reimplement
    return NULL;
 }
 
 EOLIAN static Eina_List*
-_efl_ui_text_efl_access_text_default_attributes_get(Eo *obj, Efl_Ui_Text_Data *_pd EINA_UNUSED)
+_efl_ui_text_efl_access_text_default_attributes_get(Eo *obj EINA_UNUSED,
+      Efl_Ui_Text_Data *_pd EINA_UNUSED)
 {
    return NULL;
 }
