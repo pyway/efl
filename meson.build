@@ -86,6 +86,7 @@ subprojects = [
 ]
 
 subdir(join_paths(local_lib, 'efl'))
+subdir(join_paths(local_lib, 'evil'))
 
 foreach package : subprojects
   package_name = package[0]
