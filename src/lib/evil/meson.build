@@ -46,6 +46,9 @@ if target_machine.system() == 'windows'
 
   subdir('regex')
 
+  config_h.set('_WIN32_WINNT', '0x0601')
+  config_h.set('WINVER', '0x0601')
+
   evil_lib = library('evil', evil_src,
     include_directories : config_dir,
   )
@@ -55,5 +58,5 @@ if target_machine.system() == 'windows'
     link_with: evil_lib,
   )
 else
-  evil = declare_dependency('evil')
+  evil = declare_dependency()
 endif
