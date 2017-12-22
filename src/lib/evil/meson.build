@@ -56,7 +56,7 @@ if target_machine.system() == 'windows'
   uuid = cc.find_library('uuid')
 
   evil_lib = library('evil', evil_src,
-    dependencies : [psapi, ole32, ws2_32, secur32, uuid]
+    dependencies : [psapi, ole32, ws2_32, secur32, uuid],
     include_directories : [config_dir, include_directories('regex')],
   )
 
