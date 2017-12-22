@@ -88,13 +88,13 @@ subdir('header_checks')
 
 subprojects = [
 # name   | mod  | lib  | bin  | bench |
+['evil'  , false,  true, false, false],
 ['eina'  ,  true,  true,  true,  true],
 ['eolian', false,  true,  true, false],
 ['eo'    , false,  true, false,  true],
 ]
 
 subdir(join_paths(local_lib, 'efl'))
-subdir(join_paths(local_lib, 'evil'))
 
 foreach package : subprojects
   package_name = package[0]

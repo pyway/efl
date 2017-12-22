@@ -11,8 +11,14 @@ eolian_gen_src = [
   'docs.h'
 ]
 
-eolian_gen = executable('eolian_gen',
+eolian_gen_native = executable('eolian_gen',
         eolian_gen_src,
         dependencies: eolian,
-        install: true,
+        install: true
 )
+
+if meson.is_cross_build()
+  eolian_gen = find_program('eolian_gen')
+else
+  eolian_gen = eolian_gen_native
+endif

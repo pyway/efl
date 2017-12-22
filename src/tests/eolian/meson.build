@@ -26,7 +26,7 @@ eolian_suite = executable('eolian_suite',
   #FIXME eolian
   dependencies: [eolian, check, eo],
   c_args : [
-  '-DEOLIAN_GEN="'+eolian_gen.full_path()+'"',
+  '-DEOLIAN_GEN="'+eolian_gen_native.full_path()+'"',
   '-DTESTS_BUILD_DIR="'+meson.current_build_dir()+'"',
   '-DTESTS_SRC_DIR="'+meson.current_source_dir()+'"']
 )
