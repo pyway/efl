@@ -88,7 +88,10 @@ test_efl_ui_text_label(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, voi
    evas_object_size_hint_weight_set(en, EVAS_HINT_EXPAND, 0.5);
 
    en = _create_label(win, bx);
-   efl_text_markup_set(en, "You can also <b>ENTER</b> markup!");
+   //efl_text_markup_set(en, "You can also <b>ENTER</b> markup!");
+   efl_text_markup_mixin_markup_insert(en,
+         efl_text_cursor_get(en, EFL_TEXT_CURSOR_GET_MAIN),
+         "Hello <color=#f0f> world");
    efl_text_font_set(en, "Sans", 14);
    efl_text_wrap_set(en, EFL_TEXT_FORMAT_WRAP_WORD);
    efl_text_multiline_set(en, EINA_TRUE);

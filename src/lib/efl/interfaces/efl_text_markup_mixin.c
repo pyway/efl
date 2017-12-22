@@ -52,7 +52,7 @@ _prepend_text_run(Eo *eo_obj, Efl_Text_Cursor_Cursor *cur,
         strncpy(ts, s, p - s);
         ts[p - s] = 0;
         //evas_textblock_cursor_text_prepend(cur, ts);
-        efl_text_format_insert(eo_obj, cur, ts);
+        efl_text_cursor_text_insert(eo_obj, cur, ts);
      }
 }
 

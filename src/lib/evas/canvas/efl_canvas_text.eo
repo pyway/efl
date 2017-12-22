@@ -5,7 +5,7 @@ struct Efl.Canvas.Text.Style; [[EFL text style data structure]]
 class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties,
                        Efl.Canvas.Filter.Internal, Efl.Text.Font,
                        Efl.Text.Style, Efl.Text.Format, Efl.Text.Cursor,
-                       Efl.Text.Annotate, Efl.Text.Markup, Efl.Ui.Base)
+                       Efl.Text.Annotate, Efl.Text.Markup_Mixin, Efl.Ui.Base)
 {
    [[Efl canvas text class]]
    legacy_prefix: evas_object_textblock;
@@ -348,8 +348,6 @@ class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties,
       Efl.Text.Annotate.annotation_is_item;
       Efl.Text.Annotate.annotation_positions_get;
       Efl.Text.Annotate.cursor_item_annotation { get; }
-      Efl.Text.Markup.markup { set; get; }
-      Efl.Text.Markup.cursor_markup_insert;
       Efl.Text.Format.item_insert;
       Efl.Text.Format.item_geometry_get;
       Efl.Text.Format.format_insert;
