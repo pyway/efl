@@ -49,7 +49,14 @@ if target_machine.system() == 'windows'
   config_h.set('_WIN32_WINNT', '0x0601')
   config_h.set('WINVER', '0x0601')
 
+  psapi = cc.find_library('psapi')
+  ole32 = cc.find_library('ole32')
+  ws2_32 = cc.find_library('ws2_32')
+  secur32 = cc.find_library('secur32')
+  uuid = cc.find_library('uuid')
+
   evil_lib = library('evil', evil_src,
+    dependencies : [psapi, ole32, ws2_32, secur32, uuid]
     include_directories : [config_dir, include_directories('regex')],
   )
 
