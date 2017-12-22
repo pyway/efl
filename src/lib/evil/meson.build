@@ -55,8 +55,6 @@ if target_machine.system() == 'windows'
   evil_lib = library('evil', evil_src,
     dependencies : [psapi, ole32, ws2_32, secur32, uuid],
     include_directories : [config_dir, include_directories('regex')],
-    c_args : ['-D_WIN32_WINNT=0x0601','-DWINVER=0x0601'],
-    cpp_args : ['-D_WIN32_WINNT=0x0601','-DWINVER=0x0601']
   )
 
   evil = declare_dependency(

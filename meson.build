@@ -54,6 +54,13 @@ add_global_arguments('-D_GNU_SOURCE=1', language: 'c')
 add_global_arguments('-DEFL_EO_API_SUPPORT=1', language: 'c')
 add_global_arguments('-DEFL_BETA_API_SUPPORT=1', language: 'c')
 
+if target_machine.system() == 'windows'
+  add_global_arguments('-DWINVER=0x0601', language: 'cpp')
+  add_global_arguments('-D_WIN32_WINNT=0x0601', language: 'cpp')
+  add_global_arguments('-DWINVER=0x0601', language: 'c')
+  add_global_arguments('-D_WIN32_WINNT=0x0601', language: 'c')
+endif
+
 config_h = configuration_data()
 config_h.set_quoted('MODULE_ARCH', module_arch)
 config_h.set_quoted('PACKAGE', meson.project_name())
