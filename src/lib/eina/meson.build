@@ -346,12 +346,12 @@ execinfo = cc.find_library('execinfo', required: false)
 
 eina_lib = shared_library('eina', sources,
                    include_directories : config_dir,
-                   dependencies: [m, rt, dl, execinfo, iconv, eina_deps, thread_dep, eina_mem_pools],
+                   dependencies: [m, rt, dl, execinfo, evil, iconv, eina_deps, thread_dep, eina_mem_pools],
                    install: true)
 
 eina = declare_dependency(
   include_directories: [include_directories('.')] + config_dir,
-  dependencies : [thread_dep],
+  dependencies : [thread_dep, evil],
   link_with: eina_lib,
 )
 
