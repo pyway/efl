@@ -46,9 +46,6 @@ if target_machine.system() == 'windows'
 
   subdir('regex')
 
-  config_h.set('_WIN32_WINNT', '0x0601')
-  config_h.set('WINVER', '0x0601')
-
   psapi = cc.find_library('psapi')
   ole32 = cc.find_library('ole32')
   ws2_32 = cc.find_library('ws2_32')
@@ -58,6 +55,8 @@ if target_machine.system() == 'windows'
   evil_lib = library('evil', evil_src,
     dependencies : [psapi, ole32, ws2_32, secur32, uuid],
     include_directories : [config_dir, include_directories('regex')],
+    c_args : ['-D_WIN32_WINNT=0x0601','-DWINVER=0x0601'],
+    cpp_args : ['-D_WIN32_WINNT=0x0601','-DWINVER=0x0601']
   )
 
   evil = declare_dependency(

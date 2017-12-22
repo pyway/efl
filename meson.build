@@ -48,6 +48,7 @@ local_benchmark = join_paths('src', 'benchmarks')
 local_examples = join_paths('src', 'examples')
 local_scripts = join_paths('src', 'scripts')
 
+add_global_arguments('-DHAVE_CONFIG_H=1', language: 'cpp')
 add_global_arguments('-DHAVE_CONFIG_H=1', language: 'c')
 add_global_arguments('-D_GNU_SOURCE=1', language: 'c')
 add_global_arguments('-DEFL_EO_API_SUPPORT=1', language: 'c')
