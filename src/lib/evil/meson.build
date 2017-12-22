@@ -50,7 +50,7 @@ if target_machine.system() == 'windows'
   config_h.set('WINVER', '0x0601')
 
   evil_lib = library('evil', evil_src,
-    include_directories : config_dir,
+    include_directories : [config_dir, include_directories('regex')],
   )
 
   evil = declare_dependency(
