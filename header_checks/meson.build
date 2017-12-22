@@ -79,7 +79,7 @@ if strerror_r_char_p
 endif
 
 #for later use, a bunch of librarie findings
-m = cc.find_library('m')
+m = cc.find_library('m', required: false)
 #just keep this here as required false, if it is not inplace the library rt will just be linked as NOP
 dl = cc.find_library('dl', required: false)
 rt = cc.find_library('rt', required: false)
