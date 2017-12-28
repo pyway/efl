@@ -8,18 +8,18 @@
 static const Efl_Test_Case etc[] = {
   { "Ecore", ecore_test_ecore },
 #if HAVE_ECORE_X
-  { "Ecore_X", ecore_test_ecore_x },
+ // { "Ecore_X", ecore_test_ecore_x },
 #endif
-  { "Ecore_Imf", ecore_test_ecore_imf },
+ // { "Ecore_Imf", ecore_test_ecore_imf },
 #if HAVE_ECORE_AUDIO
   { "Ecore Audio", ecore_test_ecore_audio},
 #endif
   { "Ecore_Timers", ecore_test_timer },
-  { "Ecore_Evas", ecore_test_ecore_evas },
+//  { "Ecore_Evas", ecore_test_ecore_evas },
   { "Ecore_Animators", ecore_test_animator },
   { "Eina_Thread_Queue", ecore_test_ecore_thread_eina_thread_queue },
 #if HAVE_ECORE_DRM
-  { "Ecore_Drm", ecore_test_ecore_drm },
+//  { "Ecore_Drm", ecore_test_ecore_drm },
 #endif
 #if HAVE_ECORE_FB
   { "Ecore_Fb", ecore_test_ecore_fb },
