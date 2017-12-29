@@ -16,7 +16,7 @@ ecore_suite_src = [
   'ecore_suite.h'
 ]
 
-ecore_suite_deps = []
+ecore_suite_deps = [m]
 ecore_suite_deps += ecore
 ecore_suite_deps += ecore_file
 ecore_suite_deps += ecore_input
