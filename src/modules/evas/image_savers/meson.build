@@ -3,7 +3,7 @@ evas_image_savers_file = [
 ['eet', [eet]], 
 ['jpeg', [jpeg]], 
 ['png', [png]], 
-['tgv', [rg_etc]], 
+['tgv', [rg_etc, lz4]], 
 ['tiff', [tiff]], 
 ['webp', []]
 ]

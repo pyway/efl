@@ -10,7 +10,7 @@ evas_image_loaders_file = [
   ['png', [png]],
   ['psd', []],
   ['tga', []],
-  ['tgv', []],
+  ['tgv', [rg_etc, lz4]],
   ['tiff', [tiff]],
   ['wbmp', []],
   ['webp', [webp]],
