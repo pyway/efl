@@ -16,3 +16,5 @@ foreach eo_file : pub_eo_files
                            '-o', 'c:' + join_paths(meson.current_build_dir(), eo_file + '.c'),
                            '-gch', '@INPUT@'])
 endforeach
+
+eolian_include_directories += ['-I', meson.current_source_dir()]

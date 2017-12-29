@@ -13,3 +13,7 @@ evas_pre = declare_dependency(
 	include_directories: evas_include_dirs,
 	dependencies: evas_deps,
 )
+
+
+eolian_include_directories += ['-I', join_paths(meson.source_root(), 'src', 'lib', 'evas', 'canvas')]
+eolian_include_directories += ['-I', join_paths(meson.source_root(), 'src', 'lib', 'evas', 'include')]
