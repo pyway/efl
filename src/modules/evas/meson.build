@@ -29,7 +29,7 @@ foreach engine : engines
   engine_src = []
   engine_deps = []
 
-  shared_module(mod_full_name, engine_src,
+  shared_library(mod_full_name, engine_src,
     include_directories : config_dir + engine_include_dir,
     dependencies : [eina, evas_pre] + engine_deps,
     install : true,
