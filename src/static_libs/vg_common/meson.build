@@ -13,7 +13,7 @@ freetype = dependency('freetype2')
 
 vg_common_lib = static_library('vg_common',
     vg_common_src,
-    dependencies : [eina, eo, ector, emile, freetype, eet],
+    dependencies : [eina, eo, ector, emile, freetype, eet, evas_pre],
     include_directories : config_dir + evas_include_dirs,
     install: false,
 )
