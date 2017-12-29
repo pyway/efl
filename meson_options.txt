@@ -130,6 +130,18 @@ option('elput',
   description : 'build elput'
 )
 
+option('evas_pre',
+  type : 'boolean',
+  value : true,
+  description : 'build evas'
+)
+
+option('evas',
+  type : 'boolean',
+  value : true,
+  description : 'build evas'
+)
+
 option('build-id',
   type : 'string',
   value : 'none',
