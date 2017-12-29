@@ -80,19 +80,21 @@ subdir('common3d')
 subdir('file')
 subdir('vg')
 
-evas_lib = library('evas',
+evas_pre_lib = static_library('evas_pre',
     evas_src, pub_eo_file_target,
     dependencies: [evas_deps, m, draw, valgrind, libunibreak],
     include_directories : config_dir + evas_include_directories,
-    link_with : evas_static_list,
-    install: true,
 )
 
-evas = declare_dependency(
-  include_directories: [include_directories('.')],
-  link_with: evas_lib,
+evas_pre = declare_dependency(
+  include_directories: [include_directories(
+    '.',
+    'include',
+    join_paths('common3d','save_load')),
+    vg_common_inc_dir],
+  link_with: evas_pre_lib,
   sources : pub_eo_file_target,
-  dependencies: [eina],
+  dependencies: [eina, eo, ector, emile, evas_deps],
 )
 
 #install_data(pub_eo_files,

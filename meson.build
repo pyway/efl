@@ -109,9 +109,8 @@ subprojects = [
 ['ector'            , false,  true, false, false,  true, false, ['draw', 'triangulator', 'freetype']],
 ['elput'            , false,  true, false, false,  true, false, []],
 ['ecore_drm2'       , false,  true, false, false, false, false, []],
-['evas_pre'         , false,  true, false, false, false, false, []],
-['evas'             ,  true, false, false, false, false, false, ['vg_common']],
-['evas'             , false,  true, false, false, false, false, ['libunibreak']],
+['evas'             ,  true,  true, false, false, false, false, ['vg_common', 'libunibreak']],
+['evas_goal'        , false,  true, false, false, false, false, []],
 ]
 
 

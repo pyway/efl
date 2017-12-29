@@ -130,7 +130,7 @@ option('elput',
   description : 'build elput'
 )
 
-option('evas_pre',
+option('evas_goal',
   type : 'boolean',
   value : true,
   description : 'build evas'

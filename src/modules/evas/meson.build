@@ -4,8 +4,6 @@ static_buffers = []
 evas_static_build = true
 evas_static_list = []
 
-evas_include_dirs += vg_common_inc_dir
-
 #fixed dependencies by efl
 png = dependency('libpng')
 tiff = dependency('libtiff-4')
