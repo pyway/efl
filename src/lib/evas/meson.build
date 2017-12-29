@@ -58,12 +58,15 @@ evas_header_src = [
 ]
 
 evas_include_directories = [
-  include_directories('.')
+  include_directories('.'),
+  vg_common_inc_dir
 ]
 
 evas_src = [
    'main.c'
 ]
+
+evas_src += vg_common_src
 
 evas_deps += dependency('freetype2')
 
