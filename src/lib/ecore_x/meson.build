@@ -98,9 +98,11 @@ int main () {
   ecore_x_deps += x_lib 
 endforeach
 
+ecore_x_deps += x11
 # there are a few special cases
-ecore_x_deps += cc.find_library('X11')
-cc.has_header_symbol('X11/XKBlib.h', 'XkbSetDetectableAutoRepeat')
+cc.has_header_symbol('X11/XKBlib.h', 'XkbSetDetectableAutoRepeat',
+  dependencies : x11
+)
 config_h.set('ECORE_XKB', '1')
 
 ecore_x_lib = library('ecore_x',
