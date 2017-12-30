@@ -72,6 +72,8 @@ if get_option('xi22')
   ecore_x_checks += [['Xi2_2', 'XInput2.h', 'Xi','XIGrabTouchBegin']]
 endif
 
+x11 = dependency('x11')
+
 foreach ecore_x_check : ecore_x_checks
   x_lib = cc.find_library(ecore_x_check[2], required: false)
 
@@ -84,7 +86,7 @@ int main () {
     #endif
 }
     ''',
-      dependency : [x_lib]
+      dependency : [x_lib, x11]
     ) == true
     config_h.set('ECORE_'+ecore_x_check[0].to_upper(), '1')
   else
