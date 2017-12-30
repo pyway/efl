@@ -75,7 +75,7 @@ endif
 x11 = dependency('x11')
 
 foreach ecore_x_check : ecore_x_checks
-  x_lib = cc.find_library(ecore_x_check[2], required: false)
+  x_lib = cc.find_library(ecore_x_check[2], rdependency : x11, equired: false)
 
   if cc.compiles('''
 #include <X11/Xlib.h>
