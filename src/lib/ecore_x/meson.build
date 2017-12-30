@@ -89,7 +89,7 @@ int main () {
     #endif
 }
     ''',
-      dependency : [x_lib, x11]
+      dependencies : [x_lib, x11]
     ) == true
     config_h.set('ECORE_'+ecore_x_check[0].to_upper(), '1')
   else
