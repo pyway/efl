@@ -23,6 +23,6 @@ Efl.Text.Markup, Efl.Text.Cursor)
       Efl.Text.Cursor.cursor_copy;
       Efl.Text.Cursor.cursor_content { get; }
       Efl.Text.Cursor.cursor_geometry { get; }
-      Efl.Text.Markup.cursor_markup_insert;
+      Efl.Text.Markup.markup_insert;
    }
 }

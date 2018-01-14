@@ -89,7 +89,7 @@ test_efl_ui_text_label(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, voi
 
    en = _create_label(win, bx);
    //efl_text_markup_set(en, "You can also <b>ENTER</b> markup!");
-   efl_text_markup_mixin_markup_insert(en,
+   efl_text_markup_insert(en,
          efl_text_cursor_get(en, EFL_TEXT_CURSOR_GET_MAIN),
          "Hello <color=#f0f> world");
    efl_text_font_set(en, "Sans", 14);

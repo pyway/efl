@@ -33,9 +33,9 @@
    (_IS_PARAGRAPH_SEPARATOR_SIMPLE(item) ||                                  \
     (o->legacy_newline && _IS_LINE_SEPARATOR(item))) /* Paragraph separator */
 
-typedef struct _Efl_Text_Markup_Mixin_Data Efl_Text_Markup_Mixin_Data;
+typedef struct _Efl_Text_Markup_Data Efl_Text_Markup_Data;
 
-struct _Efl_Text_Markup_Mixin_Data
+struct _Efl_Text_Markup_Data
 {
    char *markup;
 };
@@ -57,7 +57,7 @@ _prepend_text_run(Eo *eo_obj, Efl_Text_Cursor_Cursor *cur,
 }
 
 static EOLIAN void
-_efl_text_markup_mixin_markup_insert(Eo *eo_obj, Efl_Text_Markup_Mixin_Data *o,
+_efl_text_markup_markup_insert(Eo *eo_obj, Efl_Text_Markup_Data *o EINA_UNUSED,
       Efl_Text_Cursor_Cursor *cur, const char *text)
 {
    if (text)
@@ -177,4 +177,33 @@ _efl_text_markup_mixin_markup_insert(Eo *eo_obj, Efl_Text_Markup_Mixin_Data *o,
      }
 }
 
-#include "interfaces/efl_text_markup_mixin.eo.c"
+static EOLIAN void
+_efl_text_markup_markup_set(Eo *eo_obj, Efl_Text_Markup_Data *o EINA_UNUSED,
+      const char *text)
+{
+   efl_text_set(eo_obj, "");
+   if (text)
+     {
+        efl_text_markup_insert(eo_obj,
+              efl_text_cursor_get(eo_obj, EFL_TEXT_CURSOR_GET_MAIN), text);
+     }
+}
+
+
+static EOLIAN const char *
+_efl_text_markup_markup_get(Eo *eo_obj, Efl_Text_Markup_Data *o)
+{
+#if 0
+   // get the utf8 text
+   // iterate on all formats
+   // use efl_text_format_position_get
+   // use Efl.Text.Markup.utf8_to_markup to create the tags
+   // concatenate with strbuf and return
+#else
+   (void) eo_obj;
+   (void) o;
+#endif
+   return NULL;
+}
+
+#include "interfaces/efl_text_markup.eo.c"
