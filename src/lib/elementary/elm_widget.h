@@ -393,6 +393,10 @@ typedef struct _Elm_Widget_Smart_Data
    Evas_Object                  *focus_up, *focus_down, *focus_right, *focus_left;
    Elm_Object_Item              *item_focus_previous, *item_focus_next;
    Elm_Object_Item              *item_focus_up, *item_focus_down, *item_focus_right, *item_focus_left;
+   struct {
+     Evas_Object *next, *prev;
+     Evas_Object *right, *left, *top, *down;
+   } legacy_focus;
 
    /* "show region" coordinates. all widgets got those because this
     * info may be set and queried recursively through the widget

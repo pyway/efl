@@ -1709,7 +1709,16 @@ _key_action_move(Evas_Object *obj, const char *params)
      focus_dir = EFL_UI_FOCUS_DIRECTION_DOWN;
    else return EINA_FALSE;
 
-   o = efl_ui_focus_manager_move(obj, focus_dir);
+   //LEGACY HANDLING
+   {
+      Efl_Ui_Widget *current_focus = efl_ui_focus_manager_focus_get(obj);
+      ELM_WIDGET_DATA_GET_OR_RETURN(current_focus, pd, EINA_TRUE);
+      o = _elm_widget_legacy_focus_move(pd, focus_dir);
+   }
+
+
+   if (!o)
+     o = efl_ui_focus_manager_move(obj, focus_dir);
 
    if (!o)
      {

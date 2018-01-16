@@ -36,7 +36,16 @@ _efl_ui_focus_layer_efl_gfx_visible_set(Eo *obj, Efl_Ui_Focus_Layer_Data *pd, Ei
 EOLIAN static Efl_Ui_Focus_Object*
 _efl_ui_focus_layer_efl_ui_focus_manager_move(Eo *obj, Efl_Ui_Focus_Layer_Data *pd, Efl_Ui_Focus_Direction direction)
 {
-   Eo *ret = efl_ui_focus_manager_move(pd->manager, direction);
+   Eo *ret;
+
+   //LEGACY HANDLING
+   {
+      Efl_Ui_Widget *current_focus = efl_ui_focus_manager_focus_get(obj);
+      ELM_WIDGET_DATA_GET_OR_RETURN(current_focus, pd, NULL);
+      ret = _elm_widget_legacy_focus_move(pd, direction);
+   }
+
+   ret = efl_ui_focus_manager_move(pd->manager, direction);
 
    if (ret)
      return ret;

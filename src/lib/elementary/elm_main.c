@@ -1714,27 +1714,90 @@ elm_object_focus_next(Evas_Object        *obj,
 {
    Efl_Ui_Widget *top = elm_object_top_widget_get(obj);
    EINA_SAFETY_ON_NULL_RETURN(obj);
+   Evas_Object *o;
 
-   efl_ui_focus_manager_move(top, dir);
+   //LEGACY HANDLING
+   {
+      Efl_Ui_Widget *current_focus = efl_ui_focus_manager_focus_get(top);
+      ELM_WIDGET_DATA_GET_OR_RETURN(current_focus, pd);
+      o = _elm_widget_legacy_focus_move(pd, dir);
+   }
+
+   if (!o)
+     efl_ui_focus_manager_move(top, dir);
 }
 
 EAPI Evas_Object *
 elm_object_focus_next_object_get(const Evas_Object  *obj,
                                  Elm_Focus_Direction dir)
 {
-   Efl_Ui_Widget *top = elm_object_top_widget_get(obj);
+   Efl_Ui_Widget *result = NULL, **field = NULL;
    EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
+   ELM_WIDGET_DATA_GET_OR_RETURN(obj, pd, NULL);
 
-   return efl_ui_focus_manager_request_move(top, dir);
+   field = _elm_widget_legacy_field_get(pd, dir);
+   if (field)
+     result = *field;
+
+   if (!result)
+     {
+        Efl_Ui_Focus_Manager *manager = efl_ui_focus_user_focus_manager_get(obj);
+        Efl_Ui_Focus_Relations *res = efl_ui_focus_manager_fetch(manager, (Evas_Object*)obj);
+
+        EINA_SAFETY_ON_NULL_RETURN_VAL(res, NULL);
+
+        if (dir == EFL_UI_FOCUS_DIRECTION_NEXT) result = res->next;
+        else if (dir == EFL_UI_FOCUS_DIRECTION_RIGHT) result = eina_list_data_get(res->right);
+        else if (dir == EFL_UI_FOCUS_DIRECTION_LEFT) result = eina_list_data_get(res->left);
+        else if (dir == EFL_UI_FOCUS_DIRECTION_UP) result = eina_list_data_get(res->top);
+        else if (dir == EFL_UI_FOCUS_DIRECTION_DOWN) result =  eina_list_data_get(res->top);
+        else if (dir == EFL_UI_FOCUS_DIRECTION_PREVIOUS) result = res->prev;
+     }
+
+   return result;
+}
+
+Evas_Object**
+_elm_widget_legacy_field_get(Elm_Widget_Smart_Data *pd, Elm_Focus_Direction dir)
+{
+   if (dir == EFL_UI_FOCUS_DIRECTION_NEXT) return &pd->legacy_focus.next;
+   if (dir == EFL_UI_FOCUS_DIRECTION_PREVIOUS) return &pd->legacy_focus.prev;
+   if (dir == EFL_UI_FOCUS_DIRECTION_RIGHT) return &pd->legacy_focus.right;
+   if (dir == EFL_UI_FOCUS_DIRECTION_LEFT) return &pd->legacy_focus.left;
+   if (dir == EFL_UI_FOCUS_DIRECTION_UP) return &pd->legacy_focus.top;
+   if (dir == EFL_UI_FOCUS_DIRECTION_DOWN) return &pd->legacy_focus.down;
+
+   return NULL;
+}
+
+Evas_Object*
+_elm_widget_legacy_focus_move(Elm_Widget_Smart_Data *pd, Elm_Focus_Direction focus_dir)
+{
+  Evas_Object **field, *o = NULL;
+
+  field = _elm_widget_legacy_field_get(pd, focus_dir);
+  if (field)
+    {
+       o = *field;
+       if (o)
+         elm_object_focus_set(o, EINA_TRUE);
+    }
+
+  return o;
 }
 
 EAPI void
 elm_object_focus_next_object_set(Evas_Object        *obj,
-                                 Evas_Object        *next EINA_UNUSED,
-                                 Elm_Focus_Direction dir EINA_UNUSED)
+                                 Evas_Object        *next,
+                                 Elm_Focus_Direction dir)
 {
    EINA_SAFETY_ON_NULL_RETURN(obj);
-   ERR("setting explicit objects not allowed not supported");
+   ELM_WIDGET_DATA_GET_OR_RETURN(obj, pd);
+
+   Evas_Object **field = _elm_widget_legacy_field_get(pd, dir);
+
+   if (field)
+     *field = next;
 }
 
 EAPI Elm_Object_Item *

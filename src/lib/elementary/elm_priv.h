@@ -778,6 +778,10 @@ void *_elm_entry_signal_callback_del_legacy(Eo *obj, const char *emission, const
 
 void efl_ui_win_inlined_parent_set(Eo *obj, Efl_Canvas_Object *parent);
 
+//widget LEGACY api helper
+Evas_Object** _elm_widget_legacy_field_get(Elm_Widget_Smart_Data *pd, Elm_Focus_Direction);
+Evas_Object *_elm_widget_legacy_focus_move(Elm_Widget_Smart_Data *pd, Elm_Focus_Direction);
+
 /* Internal EO APIs */
 const Elm_Layout_Part_Alias_Description *elm_layout_content_aliases_get(const Eo *obj);
 const Elm_Layout_Part_Alias_Description *elm_layout_text_aliases_get(const Eo *obj);
