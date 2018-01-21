@@ -46,11 +46,13 @@ eio_src = [
   'eio_sentry_private.h'
 ]
 
+eio_c_args = []
 
 if target_machine.system() == 'windows'
   eio_src += ['eio_monitor_win32.c']
 elif target_machine.system() == 'darwin'
   eio_src += ['eio_monitor_cocoa.c']
+  eio_c_args += ['-framework', 'CoreServices']
 elif cc.has_header('sys/inotify.h')
   eio_src += ['eio_monitor_inotify.c']
 elif target_machine.system() == 'bsd'
@@ -64,7 +66,7 @@ eio_lib = library('eio',
     dependencies: [eina, eo, efl, m, eio_deps],
     include_directories : config_dir + [include_directories('.')],
     install: true,
-    c_args : package_c_args,
+    c_args : eio_c_args + package_c_args,
 )
 
 eio = declare_dependency(
