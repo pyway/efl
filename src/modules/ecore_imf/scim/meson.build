@@ -3,4 +3,4 @@ mod_src = files([
   'scim_imcontext.cpp',
   'scim_imcontext.h'
 ])
-mod_deps = [ecore, ecore_imf, ecore_x, dependency('scim-1.0'), dependency('glib-2.0')]
+mod_deps = [ecore, ecore_imf, ecore_x, ecore_evas, dependency('scim'), dependency('glib-2.0')]
