@@ -46,7 +46,7 @@ class Efl.Canvas.Layout.Part_Invalid (Efl.Canvas.Layout.Part, Efl.Content,
       Efl.Text.Cursor.cursor_copy;
       Efl.Text.Cursor.cursor_content { get; }
       Efl.Text.Cursor.cursor_geometry { get; }
-      Efl.Text.Markup.cursor_markup_insert;
+      Efl.Text.Markup.markup_insert;
       // Efl.Canvas.Layout.Part_Box
       Efl.Container.content_iterate;
       Efl.Container.content_count;
