@@ -10813,7 +10813,10 @@ _efl_canvas_text_efl_text_format_format_insert(Eo *eo_obj EINA_UNUSED,
       Efl_Text_Cursor_Cursor *cur,
       const char *format)
 {
-   _evas_textblock_cursor_format_append(cur, format, NULL, EINA_FALSE);
+   if (_evas_textblock_cursor_format_append(cur, format, NULL, EINA_FALSE))
+     {
+        evas_textblock_cursor_char_next(cur);
+     }
 }
 
 EAPI Eina_Bool
