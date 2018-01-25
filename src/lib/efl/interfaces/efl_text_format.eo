@@ -168,10 +168,9 @@ interface Efl.Text.Format {
          return: bool; [[$true if query was succcessful, $false otherwise]]
       }
       format_get {
-         [[Inserts a format at specified position.
+         [[Gets the format at current cursor position
 
-           Given a cursor, inserts a format node in its position. This position
-           can be queried to get the format node's handle.
+          Returns the handle of the format at the given cursor's position.
          ]]
          legacy: null;
          params {
@@ -180,10 +179,9 @@ interface Efl.Text.Format {
          return: ptr(const(Efl.Text.Format.Format)); [[Format handle]]
       }
       format_string_get {
-         [[Inserts a format at specified position.
+         [[Gets the format string of a format handle
 
-           Given a cursor, inserts a format node in its position. This position
-           can be queried to get the format node's handle.
+           Returns the string set to a format, given the format handle..
          ]]
          legacy: null;
          params {
