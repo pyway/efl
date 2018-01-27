@@ -142,7 +142,6 @@ interface Elm.Interface.Fileselector (Efl.Ui.View)
          params {
             @in model: Efl.Model; [[Model to be set]]
          }
-         return: future<Efl.Model>; [[Promise returning the recorded selected model or error]]
       }
       selected_model_get {
          [[Get the currently selected item's model, in the given file the given file selector widget]]
