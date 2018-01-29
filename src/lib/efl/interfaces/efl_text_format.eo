@@ -185,9 +185,20 @@ interface Efl.Text.Format {
          ]]
          legacy: null;
          params {
-            @in cur: ptr(const(Efl.Text.Format.Format)); [[Cursor object]]
+            @in format: ptr(const(Efl.Text.Format.Format)); [[Cursor object]]
          }
          return: string; [[The format description]]
+      }
+      format_position_get {
+         [[Gets the format text position of a format handle
+
+           Returns current position of $format in text.
+         ]]
+         legacy: null;
+         params {
+            @in format: ptr(const(Efl.Text.Format.Format)); [[Cursor object]]
+         }
+         return: int; [[The format position in the text]]
       }
       formats_get {
          [[Returns an iterator of all the handles in a range.
@@ -237,7 +248,14 @@ interface Efl.Text.Format {
             @in cur: ptr(Efl.Text.Cursor.Cursor); [[Cursor to set]]
          }
          return: bool; [[$true if successful, $false otherwise]]
-
+      }
+      format_is_visible {
+         [[Returns whether format is visible]]
+         legacy: null;
+         params {
+            @in format: ptr(const(Efl.Text.Format.Format)); [[Format to query]]
+         }
+         return: bool; [[$true if visible format, $false otherwise]]
       }
    }
 }

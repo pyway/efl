@@ -189,21 +189,52 @@ _efl_text_markup_markup_set(Eo *eo_obj, Efl_Text_Markup_Data *o EINA_UNUSED,
      }
 }
 
-
 static EOLIAN const char *
-_efl_text_markup_markup_get(Eo *eo_obj, Efl_Text_Markup_Data *o)
+_efl_text_markup_markup_get(Eo *eo_obj, Efl_Text_Markup_Data *o EINA_UNUSED)
 {
-#if 0
-   // get the utf8 text
-   // iterate on all formats
-   // use efl_text_format_position_get
-   // use Efl.Text.Markup.utf8_to_markup to create the tags
-   // concatenate with strbuf and return
-#else
-   (void) eo_obj;
-   (void) o;
-#endif
-   return NULL;
+   Eina_Iterator *itr;
+   Efl_Text_Format_Format *fmt;
+   Eina_Strbuf *buf;
+   const char *text, *p;
+   int prev_pos;
+
+   buf = eina_strbuf_new();
+   p = text = efl_text_get(eo_obj);
+   printf("utf8 text: %s\n", text);
+   itr = efl_text_formats_get(eo_obj, NULL, NULL);
+   prev_pos = 0;
+   EINA_ITERATOR_FOREACH(itr, fmt)
+     {
+        int pos;
+        const char *format;
+        const char *tmp;
+        int off;
+
+        format = efl_text_format_string_get(eo_obj, fmt);
+        if (!format) continue;
+        if (format[0] == '+')
+          {
+             tmp = "<%s>";
+          }
+        else
+          {
+             tmp = "</%s>";
+          }
+        pos = efl_text_format_position_get(eo_obj, fmt);
+        printf(" -- format pos: %d\n", pos);
+        off = pos - prev_pos;
+        eina_strbuf_append_length(buf, p, off);
+        eina_strbuf_append_printf(buf, tmp, format + 2);
+        prev_pos = pos;
+        p += off;
+        if (efl_text_format_is_visible(eo_obj, fmt))
+          {
+             p++;
+             prev_pos++;
+          }
+     }
+   eina_strbuf_append(buf, p);
+   return eina_strbuf_string_steal(buf);
 }
 
 #include "interfaces/efl_text_markup.eo.c"

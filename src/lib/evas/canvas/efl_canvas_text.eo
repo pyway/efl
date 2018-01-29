@@ -353,10 +353,12 @@ class Efl.Canvas.Text (Efl.Canvas.Object, Efl.Text, Efl.Text.Properties,
       Efl.Text.Format.format_insert;
       Efl.Text.Format.format_get;
       Efl.Text.Format.format_string_get;
+      Efl.Text.Format.format_position_get;
       Efl.Text.Format.formats_get;
       Efl.Text.Format.items_get;
       Efl.Text.Format.item_string_get;
       Efl.Text.Format.at_format_set;
+      Efl.Text.Format.format_is_visible;
       Efl.Gfx.scale { set; }
    }
    events {

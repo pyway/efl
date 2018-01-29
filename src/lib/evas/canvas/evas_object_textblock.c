@@ -11429,6 +11429,23 @@ _efl_canvas_text_efl_text_format_format_string_get(Eo *eo_obj EINA_UNUSED,
    return evas_textblock_node_format_text_get(format);
 }
 
+EOLIAN static int
+_efl_canvas_text_efl_text_format_format_position_get(Eo *eo_obj EINA_UNUSED,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Efl_Text_Format_Format *format)
+{
+   return _evas_textblock_node_format_pos_get(format);
+}
+
+
+EOLIAN static Eina_Bool
+_efl_canvas_text_efl_text_format_format_is_visible(Eo *eo_obj EINA_UNUSED,
+      Efl_Canvas_Text_Data *o EINA_UNUSED,
+      const Efl_Text_Format_Format *format)
+{
+   return format->visible;
+}
+
 /**
   * @internal
   * Returns the value of the current data of list node,
