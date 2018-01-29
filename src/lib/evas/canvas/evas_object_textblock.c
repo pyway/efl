@@ -7826,16 +7826,6 @@ evas_object_textblock_text_markup_prepend(Efl_Text_Cursor_Cursor *cur, const cha
    _evas_object_textblock_text_markup_prepend(cur->obj, cur, text);
 }
 
-EOLIAN static void
-_efl_canvas_text_efl_text_markup_markup_insert(Eo *eo_obj,
-      Efl_Canvas_Text_Data *o EINA_UNUSED,
-      Efl_Text_Cursor_Cursor *cur, const char *markup)
-{
-   ASYNC_BLOCK;
-   _evas_object_textblock_text_markup_prepend(eo_obj, cur, markup);
-   //efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
-}
-
 /**
  * @internal
  * An helper function to markup get. Appends the format from fnode to the strbugf txt.
@@ -15334,11 +15324,10 @@ _efl_canvas_text_efl_text_format_item_insert(Eo *eo_obj,
       const char *item, const char *format)
 {
    Eina_Strbuf *buf = eina_strbuf_new();
-   Efl_Text_Annotate_Annotation *an;
 
    eina_strbuf_append_printf(buf, "%s href=%s", format, item);
 
-   an = _textblock_annotation_insert(cur->obj, o, cur, cur,
+   _textblock_annotation_insert(cur->obj, o, cur, cur,
             eina_strbuf_string_get(buf), EINA_TRUE);
    eina_strbuf_free(buf);
    efl_event_callback_legacy_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
