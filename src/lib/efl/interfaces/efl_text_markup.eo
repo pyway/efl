@@ -1,6 +1,6 @@
 import efl_text_types;
 
-mixin Efl.Text.Markup {
+mixin Efl.Text.Markup (Efl.Interface, Efl.Object) {
    [[Markup mixin
 
      @since 1.22
@@ -20,6 +20,10 @@ mixin Efl.Text.Markup {
             markup: string;
          }
       }
+   }
+   implements {
+      Efl.Object.destructor;
+      Efl.Object.finalize;
    }
 }
 

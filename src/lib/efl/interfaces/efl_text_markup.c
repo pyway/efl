@@ -1,7 +1,7 @@
 #include "config.h"
 #include "Efl.h"
 
-#define MY_CLASS EFL_TEXT_MARKUP_MIXIN_CLASS
+#define MY_CLASS EFL_TEXT_MARKUP_MIXIN
 
 #define ERR(...) EINA_LOG_DOM_ERR(EINA_LOG_DOMAIN_DEFAULT, __VA_ARGS__)
 
@@ -37,8 +37,25 @@ typedef struct _Efl_Text_Markup_Data Efl_Text_Markup_Data;
 
 struct _Efl_Text_Markup_Data
 {
-   char *markup;
+   const char *markup;
 };
+
+static EOLIAN Eo *
+_efl_text_markup_efl_object_finalize(Eo *eo_obj, Efl_Text_Markup_Data *pd EINA_UNUSED)
+{
+   Eo *ret;
+   ret = efl_finalize(efl_super(eo_obj, MY_CLASS));
+
+   //efl_event_callback_add(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, _on_text_changed, NULL);
+   return ret;
+}
+
+static EOLIAN void
+_efl_text_markup_efl_object_destructor(Eo *eo_obj, Efl_Text_Markup_Data *pd)
+{
+   eina_stringshare_del(pd->markup);
+   efl_destructor(efl_super(eo_obj, MY_CLASS));
+}
 
 /* table of html escapes (that i can find) this should be ordered with the
  * most common first as it's a linear search to match - no hash for this.
