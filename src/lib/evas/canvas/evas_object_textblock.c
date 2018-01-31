@@ -7279,7 +7279,7 @@ _efl_canvas_text_style_set(Eo *eo_obj, Efl_Canvas_Text_Data *o, const char *key,
    o->format_changed = EINA_TRUE;
    _evas_textblock_invalidate_all(o);
    _evas_textblock_changed(o, eo_obj);
-   efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 EAPI Evas_Textblock_Style *
@@ -7692,7 +7692,7 @@ _efl_canvas_text_efl_text_markup_markup_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
 {
    ASYNC_BLOCK;
    _evas_object_textblock_text_markup_set(eo_obj, o, text);
-   //efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   //efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 static void
@@ -10485,7 +10485,7 @@ _efl_canvas_text_efl_text_cursor_cursor_text_insert(Eo *eo_obj,
    ASYNC_BLOCK;
    int len = _efl_canvas_text_cursor_text_append(cur, _text);
    _evas_textblock_changed(o, eo_obj);
-   efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
    return len;
 }
 
@@ -10924,7 +10924,7 @@ _efl_canvas_text_efl_text_cursor_cursor_char_delete(Eo *eo_obj, Efl_Canvas_Text_
 {
    ASYNC_BLOCK;
    evas_textblock_cursor_char_delete(cur);
-   efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 EAPI void
@@ -11038,7 +11038,7 @@ _efl_canvas_text_range_delete(Eo *eo_obj EINA_UNUSED, Efl_Canvas_Text_Data *pd E
      evas_textblock_cursor_copy(cur1, o->cursor);
 
    _evas_textblock_changed(o, cur1->obj);
-   efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 EOLIAN static Eina_Unicode
@@ -14961,7 +14961,7 @@ _efl_canvas_text_efl_text_text_set(Eo *eo_obj, Efl_Canvas_Text_Data *o,
    ASYNC_BLOCK;
    evas_object_textblock_text_markup_set(eo_obj, "");
    efl_text_cursor_text_insert(eo_obj, o->cursor, text);
-   //efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   //efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 static char *
@@ -15288,7 +15288,7 @@ _efl_canvas_text_efl_text_annotate_annotation_insert(Eo *eo_obj, Efl_Canvas_Text
 
    ret = _textblock_annotation_insert(eo_obj, o, start, end, format,
          EINA_FALSE);
-   efl_event_callback_legacy_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_legacy_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
    return ret;
 }
 
@@ -15330,7 +15330,7 @@ _efl_canvas_text_efl_text_format_item_insert(Eo *eo_obj,
    _textblock_annotation_insert(cur->obj, o, cur, cur,
             eina_strbuf_string_get(buf), EINA_TRUE);
    eina_strbuf_free(buf);
-   efl_event_callback_legacy_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_legacy_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 EOLIAN static Efl_Text_Annotate_Annotation *
@@ -15423,7 +15423,7 @@ _canvas_text_format_changed(Eo *eo_obj, Efl_Canvas_Text_Data *o)
    o->format_changed = EINA_TRUE;
    _evas_textblock_invalidate_all(o);
    _evas_textblock_changed(o, eo_obj);
-   efl_event_callback_call(eo_obj, EFL_CANVAS_TEXT_EVENT_CHANGED, NULL);
+   efl_event_callback_call(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, NULL);
 }
 
 /* Efl.Text.Font interface implementation */

@@ -3077,7 +3077,7 @@ _efl_ui_text_efl_object_constructor(Eo *obj, Efl_Ui_Text_Data *sd)
       (sd->entry_edje, EVAS_HINT_FILL, EVAS_HINT_FILL);
    efl_event_callback_add(text_obj, EFL_UI_TEXT_EVENT_CHANGED_USER,
          _efl_ui_text_changed_user_cb, obj);
-   efl_event_callback_add(text_obj, EFL_CANVAS_TEXT_EVENT_CHANGED,
+   efl_event_callback_add(text_obj, EFL_TEXT_EVENT_TEXT_CHANGED,
          _efl_ui_text_changed_cb, obj);
    efl_event_callback_add(text_obj, EFL_UI_TEXT_INTERACTIVE_EVENT_SELECTION_CHANGED,
          _efl_ui_text_selection_changed_cb, obj);
@@ -3296,7 +3296,7 @@ _efl_ui_text_efl_object_destructor(Eo *obj, Efl_Ui_Text_Data *sd)
    text_obj = edje_object_part_swallow_get(sd->entry_edje, "elm.text");
    efl_event_callback_del(text_obj, EFL_UI_TEXT_EVENT_CHANGED_USER,
          _efl_ui_text_changed_user_cb, obj);
-   efl_event_callback_del(text_obj, EFL_CANVAS_TEXT_EVENT_CHANGED,
+   efl_event_callback_del(text_obj, EFL_TEXT_EVENT_TEXT_CHANGED,
          _efl_ui_text_changed_cb, obj);
    efl_event_callback_del(text_obj, EFL_UI_TEXT_INTERACTIVE_EVENT_SELECTION_CHANGED,
          _efl_ui_text_selection_changed_cb, obj);
