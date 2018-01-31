@@ -23,4 +23,7 @@ interface Efl.Text
          }
       }
    }
+   events {
+        text,changed;
+   }
 }

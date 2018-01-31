@@ -40,13 +40,20 @@ struct _Efl_Text_Markup_Data
    const char *markup;
 };
 
+static void
+_on_text_changed(void *data EINA_UNUSED, const Efl_Event *ev)
+{
+   Efl_Text_Markup_Data *pd = efl_data_scope_get(ev->object, MY_CLASS);
+   eina_stringshare_del(pd->markup);
+}
+
 static EOLIAN Eo *
 _efl_text_markup_efl_object_finalize(Eo *eo_obj, Efl_Text_Markup_Data *pd EINA_UNUSED)
 {
    Eo *ret;
    ret = efl_finalize(efl_super(eo_obj, MY_CLASS));
 
-   //efl_event_callback_add(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, _on_text_changed, NULL);
+   efl_event_callback_add(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, _on_text_changed, NULL);
    return ret;
 }
 
