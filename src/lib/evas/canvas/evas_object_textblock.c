@@ -11424,7 +11424,20 @@ _efl_canvas_text_efl_text_format_format_position_get(Eo *eo_obj EINA_UNUSED,
       Efl_Canvas_Text_Data *o EINA_UNUSED,
       const Efl_Text_Format_Format *format)
 {
-   return _evas_textblock_node_format_pos_get(format);
+   int pos;
+
+   Evas_Object_Textblock_Node_Text *itr;
+   pos = _evas_textblock_node_format_pos_get(format);
+
+   itr = o->text_nodes;
+   EINA_INLIST_FOREACH(o->text_nodes, itr)
+     {
+        if (itr == format->text_node)
+           break;
+        pos += eina_ustrbuf_length_get(itr->unicode);
+     }
+
+   return pos;
 }
 
 
