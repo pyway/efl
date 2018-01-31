@@ -25,5 +25,8 @@ mixin Efl.Text.Markup (Efl.Interface, Efl.Object) {
       Efl.Object.destructor;
       Efl.Object.finalize;
    }
+   events {
+        markup,changed;
+   }
 }
 

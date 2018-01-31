@@ -41,10 +41,11 @@ struct _Efl_Text_Markup_Data
 };
 
 static void
-_on_text_changed(void *data EINA_UNUSED, const Efl_Event *ev)
+_on_markup_changed(void *data EINA_UNUSED, const Efl_Event *ev)
 {
    Efl_Text_Markup_Data *pd = efl_data_scope_get(ev->object, MY_CLASS);
    eina_stringshare_del(pd->markup);
+   pd->markup = NULL;
 }
 
 static EOLIAN Eo *
@@ -53,7 +54,7 @@ _efl_text_markup_efl_object_finalize(Eo *eo_obj, Efl_Text_Markup_Data *pd EINA_U
    Eo *ret;
    ret = efl_finalize(efl_super(eo_obj, MY_CLASS));
 
-   efl_event_callback_add(eo_obj, EFL_TEXT_EVENT_TEXT_CHANGED, _on_text_changed, NULL);
+   efl_event_callback_add(eo_obj, EFL_TEXT_MARKUP_EVENT_MARKUP_CHANGED, _on_markup_changed, NULL);
    return ret;
 }
 
@@ -518,12 +519,16 @@ _efl_text_markup_markup_get(Eo *eo_obj, Efl_Text_Markup_Data *o EINA_UNUSED)
    Eina_Iterator *itr;
    Efl_Text_Format_Format *fmt;
    Eina_Strbuf *buf;
-   const char *text, *p;
+   const char *text, *s, *p;
    int prev_pos;
 
+   if (o->markup)
+     {
+        return o->markup;
+     }
+
    buf = eina_strbuf_new();
-   p = text = efl_text_get(eo_obj);
-   printf("utf8 text: %s\n", text);
+   s = p = text = efl_text_get(eo_obj);
    itr = efl_text_formats_get(eo_obj, NULL, NULL);
    prev_pos = 0;
    EINA_ITERATOR_FOREACH(itr, fmt)
@@ -535,29 +540,45 @@ _efl_text_markup_markup_get(Eo *eo_obj, Efl_Text_Markup_Data *o EINA_UNUSED)
 
         format = efl_text_format_string_get(eo_obj, fmt);
         if (!format) continue;
+        pos = efl_text_format_position_get(eo_obj, fmt);
+        off = pos - prev_pos;
+        for (int i = 0; i < off; i++)
+          {
+             int idx = 0;
+             eina_unicode_utf8_next_get(p, &idx);
+             p += idx;
+          }
+        eina_strbuf_append_length(buf, s, p - s);
+        if (efl_text_format_is_visible(eo_obj, fmt))
+          {
+             int idx = 0;
+             eina_unicode_utf8_next_get(p, &idx);
+             p += idx;
+             pos++;
+          }
+        s = p;
+        prev_pos = pos;
+
         if (format[0] == '+')
           {
              tmp = "<%s>";
+             format += 2;
+          }
+        else if (format[0] == '-')
+          {
+             tmp = "</%s>";
+             format += 2;
           }
         else
           {
-             tmp = "</%s>";
+             tmp = "<%s>";
           }
-        pos = efl_text_format_position_get(eo_obj, fmt);
-        printf(" -- format pos: %d\n", pos);
-        off = pos - prev_pos;
-        eina_strbuf_append_length(buf, p, off);
-        eina_strbuf_append_printf(buf, tmp, format + 2);
-        prev_pos = pos;
-        p += off;
-        if (efl_text_format_is_visible(eo_obj, fmt))
-          {
-             p++;
-             prev_pos++;
-          }
+        eina_strbuf_append_printf(buf, tmp, format);
      }
    eina_strbuf_append(buf, p);
-   return eina_strbuf_string_steal(buf);
+
+   o->markup = eina_stringshare_add(eina_strbuf_string_steal(buf));
+   return o->markup;
 }
 
 #include "interfaces/efl_text_markup.eo.c"

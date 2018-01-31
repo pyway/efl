@@ -5046,6 +5046,7 @@ _decoration_defer_all(Eo *obj)
 static void
 _efl_ui_text_changed_cb(void *data, const Efl_Event *event EINA_UNUSED)
 {
+   efl_event_callback_call(data, EFL_TEXT_MARKUP_EVENT_MARKUP_CHANGED, NULL);
    _decoration_defer_all(data);
    _entry_changed_handle(data, EFL_UI_TEXT_EVENT_CHANGED, NULL);
 }
@@ -5053,6 +5054,7 @@ _efl_ui_text_changed_cb(void *data, const Efl_Event *event EINA_UNUSED)
 static void
 _efl_ui_text_changed_user_cb(void *data, const Efl_Event *event)
 {
+   efl_event_callback_call(data, EFL_TEXT_MARKUP_EVENT_MARKUP_CHANGED, NULL);
    _decoration_defer_all(data);
    _entry_changed_handle(data, EFL_UI_TEXT_EVENT_CHANGED_USER, event->info);
 }
