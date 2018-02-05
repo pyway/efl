@@ -13,3 +13,4 @@ engine_src = files([
 
 engine_deps = [ecore_wl2, ecore_input]
 engine_include_dir += include_directories(join_paths('..', '..', '..', 'evas', 'engines', 'wayland_common'))
+ecore_evas_wayland_engine_include_dir = include_directories('.')
