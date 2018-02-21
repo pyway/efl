@@ -191,26 +191,7 @@ eina_vpath_resolve(const char* path)
 
    if (!path) return NULL;
 
-   if (path[0] == '/')
-     {
-        return strdup(path);
-     }
-   // .*
-   else if (path[0] == '.')
-     {
-        // .[/]* <- current dir relative
-        if ((path[1] == '/') || (path[1] == 0))
-          {
-             return strdup(path);
-          }
-        // ..[/]* <- parent dir relative
-        if ((path[1] == '.') && ((path[2] == '/') || (path[2] == 0)))
-          {
-             return strdup(path);
-          }
-     }
-   // ~* ...
-   else if (path[0] == '~')
+   if (path[0] == '~')
      {
         // ~/ <- home directory
         if (path[1] == '/')
@@ -299,8 +280,13 @@ eina_vpath_resolve(const char* path)
               }
          }
     }
+   //just return the path, since we assume that this is a normal path
+   else
+    {
+       return strdup(path);
+    }
 
-   ERR("The path has to start with either '~/' or '/' or './' '../'or '(:NAME:)/' \nThe string was: %s", path);
+   ERR("The path has to start with either '~/' or '(:NAME:)/' or be a normal path \nThe string was: %s", path);
 
    return NULL;
 }

@@ -16,6 +16,7 @@ START_TEST(eina_test_vpath_valid)
 
    ck_assert_str_eq(eina_vpath_resolve("/"), "/");
    ck_assert_str_eq(eina_vpath_resolve("./"), "./");
+   ck_assert_str_eq(eina_vpath_resolve("./"), "./");
 
    snprintf(test, sizeof(test), "%s/", eina_environment_home_get());
    ck_assert_str_eq(eina_vpath_resolve("~/"), test);
@@ -39,7 +40,6 @@ START_TEST(eina_test_vpath_invalid)
    ck_assert_ptr_null(eina_vpath_resolve("(:"));
    ck_assert_ptr_null(eina_vpath_resolve("(:home:)"));
    ck_assert_ptr_null(eina_vpath_resolve("(:wrong_meta_key:)/"));
-   ck_assert_ptr_null(eina_vpath_resolve("..this..should..not..work"));
 
    ret = eina_shutdown();
 }
