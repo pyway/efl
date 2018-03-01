@@ -35,7 +35,10 @@ _unrealized_cb(void *data, const Efl_Event *ev EINA_UNUSED)
    if (ev->info != data) return;
 
    if (pd) /* if the obect is dead pd is NULL */
-     pd->realized = EINA_FALSE;
+     {
+        pd->realized = EINA_FALSE;
+        efl_del(pd->adapter);
+     }
 }
 
 EOLIAN static void
