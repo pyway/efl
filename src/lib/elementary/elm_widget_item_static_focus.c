@@ -108,6 +108,10 @@ _elm_widget_item_static_focus_efl_object_destructor(Eo *obj, Elm_Widget_Item_Sta
         efl_event_callback_del(wpd->widget, ELM_GENGRID_EVENT_REALIZED, _realized_cb, obj);
         efl_event_callback_del(wpd->widget, ELM_GENGRID_EVENT_UNREALIZED, _unrealized_cb, obj);
      }
+
+   if (pd->adapter)
+     efl_del(pd->adapter);
+
    return efl_destructor(efl_super(obj, MY_CLASS));
 }
 
