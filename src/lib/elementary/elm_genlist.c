@@ -2824,6 +2824,8 @@ _elm_genlist_item_focused(Elm_Object_Item *eo_it)
        (elm_wdg_item_disabled_get(eo_it)))
      return;
 
+   printf("FOCUSED %p\n", eo_it);
+
    if (it != sd->pin_item)
      {
         switch (_elm_config->focus_autoscroll_mode)
@@ -2865,6 +2867,8 @@ _elm_genlist_item_unfocused(Elm_Object_Item *eo_it)
    if ((!sd->focused_item) ||
        (eo_it != sd->focused_item))
      return;
+
+   printf("UNFOCUSED %p\n", eo_it);
 
    if (elm_widget_focus_highlight_enabled_get(obj))
      {
@@ -6128,6 +6132,8 @@ _elm_genlist_item_elm_widget_item_item_focus_set(Eo *eo_it, Elm_Gen_Item *it, Ei
 {
    Evas_Object *obj = WIDGET(it);
    ELM_GENLIST_DATA_GET(obj, sd);
+
+   printf("FOCUS SET %p %c\n", eo_it, focused);
 
    if (focused)
      {
