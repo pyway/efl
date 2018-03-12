@@ -36,8 +36,12 @@ _unrealized_cb(void *data, const Efl_Event *ev EINA_UNUSED)
 
    if (pd) /* if the obect is dead pd is NULL */
      {
+        //unrealizing a focused item is a reallz terrible idea, since this will lead a other item beeing realiz
+        if (!efl_ui_focus_object_focus_get(pd->adapter))
+          {
+             efl_del(pd->adapter);
+          }
         pd->realized = EINA_FALSE;
-        efl_del(pd->adapter);
      }
 }
 
