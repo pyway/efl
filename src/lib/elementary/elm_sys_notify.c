@@ -203,7 +203,7 @@ _elm_sys_notify_singleton_get(Eo   *obj EINA_UNUSED,
                               void *sd  EINA_UNUSED)
 {
    if (!_singleton)
-     _singleton = efl_add(MY_CLASS, NULL);
+     _singleton = efl_add_ref(MY_CLASS, NULL);
    return _singleton;
 }
 
@@ -228,7 +228,7 @@ _elm_unneed_sys_notify(void)
    if (manager)
      {
         elm_obj_sys_notify_servers_set(manager, ELM_SYS_NOTIFY_SERVER_NONE);
-        efl_del(manager);
+        efl_unref(manager);
      }
 }
 

@@ -83,7 +83,7 @@ edje_init(void)
      }
 
    _edje_scale = FROM_DOUBLE(1.0);
-   _edje_global_obj = efl_add(EDJE_GLOBAL_CLASS, NULL);
+   _edje_global_obj = efl_add_ref(EDJE_GLOBAL_CLASS, NULL);
    if (!_edje_global_obj ||
        !efl_loop_register(efl_main_loop_get(), EFL_GFX_COLOR_CLASS_INTERFACE, _edje_global_obj) ||
        !efl_loop_register(efl_main_loop_get(), EFL_GFX_TEXT_CLASS_INTERFACE, _edje_global_obj) ||
@@ -153,7 +153,7 @@ shutdown_all:
         efl_loop_unregister(efl_main_loop_get(), EFL_GFX_COLOR_CLASS_INTERFACE, _edje_global_obj);
         efl_loop_unregister(efl_main_loop_get(), EFL_GFX_TEXT_CLASS_INTERFACE, _edje_global_obj);
         efl_loop_unregister(efl_main_loop_get(), EFL_GFX_SIZE_CLASS_INTERFACE, _edje_global_obj);
-        efl_del(_edje_global_obj);
+        efl_unref(_edje_global_obj);
         _edje_global_obj = NULL;
      }
 shutdown_efreet:
@@ -212,7 +212,7 @@ _edje_shutdown_core(void)
    efl_loop_unregister(efl_main_loop_get(), EFL_GFX_COLOR_CLASS_INTERFACE, _edje_global_obj);
    efl_loop_unregister(efl_main_loop_get(), EFL_GFX_TEXT_CLASS_INTERFACE, _edje_global_obj);
    efl_loop_unregister(efl_main_loop_get(), EFL_GFX_SIZE_CLASS_INTERFACE, _edje_global_obj);
-   efl_del(_edje_global_obj);
+   efl_unref(_edje_global_obj);
    _edje_global_obj = NULL;
 
    eina_cow_del(_edje_calc_params_map_cow);
@@ -274,11 +274,11 @@ void
 _edje_class_init(void)
 {
    if (!_edje_color_class_member)
-     _edje_color_class_member = efl_add(EFL_OBSERVABLE_CLASS, NULL);
+     _edje_color_class_member = efl_add_ref(EFL_OBSERVABLE_CLASS, NULL);
    if (!_edje_text_class_member)
-     _edje_text_class_member = efl_add(EFL_OBSERVABLE_CLASS, NULL);
+     _edje_text_class_member = efl_add_ref(EFL_OBSERVABLE_CLASS, NULL);
    if (!_edje_size_class_member)
-     _edje_size_class_member = efl_add(EFL_OBSERVABLE_CLASS, NULL);
+     _edje_size_class_member = efl_add_ref(EFL_OBSERVABLE_CLASS, NULL);
 }
 
 void
@@ -286,17 +286,17 @@ _edje_class_shutdown(void)
 {
    if (_edje_color_class_member)
      {
-        efl_del(_edje_color_class_member);
+        efl_unref(_edje_color_class_member);
         _edje_color_class_member = NULL;
      }
    if (_edje_text_class_member)
      {
-        efl_del(_edje_text_class_member);
+        efl_unref(_edje_text_class_member);
         _edje_text_class_member = NULL;
      }
    if (_edje_size_class_member)
      {
-        efl_del(_edje_size_class_member);
+        efl_unref(_edje_size_class_member);
         _edje_size_class_member = NULL;
      }
 }
