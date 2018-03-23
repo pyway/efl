@@ -64,7 +64,7 @@ class Elm.Index (Efl.Ui.Layout, Efl.Ui.Direction,
             @in level: int; [[The index level (one of $0 or $1) where changes were made]]
          }
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend a new item on a given index widget.
 
 
@@ -88,7 +88,7 @@ class Elm.Index (Efl.Ui.Layout, Efl.Ui.Direction,
            If deletion callbacks are set, via elm_object_item_del_cb_set(),
            that callback function will be called for each item in $obj.]]
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Insert a new item into the index object after item $after.
 
            Despite the most common usage of the $letter argument is for
@@ -109,7 +109,7 @@ class Elm.Index (Efl.Ui.Layout, Efl.Ui.Direction,
             @in data: const(void_ptr) @optional; [[The item data to set for the index's item]]
          }
       }
-      item_find {
+      item_find @beta {
          [[Find a given index widget's item, using item data.]]
 
          return: Elm.Widget.Item; [[The index item handle, if found, or $NULL otherwise]]
@@ -117,7 +117,7 @@ class Elm.Index (Efl.Ui.Layout, Efl.Ui.Direction,
             @in data: const(void_ptr); [[The item data pointed to by the desired index item]]
          }
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Insert a new item into the index object before item $before.
 
            Despite the most common usage of the $letter argument is for
@@ -138,7 +138,7 @@ class Elm.Index (Efl.Ui.Layout, Efl.Ui.Direction,
             @in data: const(void_ptr) @optional; [[The item data to set for the index's item]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Append a new item on a given index widget.
 
            Despite the most common usage of the $letter argument is for
@@ -163,7 +163,7 @@ class Elm.Index (Efl.Ui.Layout, Efl.Ui.Direction,
             @in level: int; [[$0 or $1, the currently implemented levels.]]
          }
       }
-      item_sorted_insert {
+      item_sorted_insert @beta {
          [[Insert a new item into the given index widget, using $cmp_func function to sort items (by item handles).
 
            Despite the most common usage of the $letter argument is for

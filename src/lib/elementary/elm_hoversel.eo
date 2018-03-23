@@ -70,7 +70,7 @@ class Elm.Hoversel (Efl.Ui.Button, Efl.Ui.Selectable,
       hover_end {
          [[This dismisses the hoversel popup as if the user had clicked outside the hover.]]
       }
-      item_add {
+      item_add @beta {
          [[Add an item to the hoversel button
 
            This adds an item to the hoversel to show when it is clicked. Note: if you

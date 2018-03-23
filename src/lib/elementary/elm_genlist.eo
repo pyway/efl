@@ -338,7 +338,7 @@ class Elm.Genlist (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             return: Elm.Widget.Item; [[Last item in list]]
          }
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Insert an item before another in a genlist widget
 
            This inserts an item before another in the list. It will be in
@@ -366,7 +366,7 @@ class Elm.Genlist (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
            To update just one item, use \@ref elm_genlist_item_update.
          ]]
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Insert an item after another in a genlist widget
 
            This inserts an item after another in the list. It will be in the
@@ -446,7 +446,7 @@ class Elm.Genlist (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
          ]]
          return: uint; [[Item in list]]
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend a new item in a given genlist widget.
 
            This adds an item to the beginning of the list or beginning of
@@ -468,7 +468,7 @@ class Elm.Genlist (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
            This removes (and deletes) all items in $obj, leaving it empty.
          ]]
       }
-      item_append {
+      item_append @beta {
          [[Append a new item in a given genlist widget.
 
            This adds the given item to the end of the list or the end of
@@ -484,7 +484,7 @@ class Elm.Genlist (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             @in func_data: const(void_ptr) @optional; [[Data passed to $func above.]]
          }
       }
-      item_sorted_insert {
+      item_sorted_insert @beta {
          [[Insert a new item into the sorted genlist object
 
            This inserts an item in the genlist based on user defined

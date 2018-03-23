@@ -166,7 +166,7 @@ class Elm.Toolbar (Efl.Ui.Widget, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             return: Elm.Widget.Item; [[The toolbar more item.]]
          }
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Insert a new item into the toolbar object before item $before.
 
            A new item will be created and added to the toolbar. Its position in
@@ -200,7 +200,7 @@ class Elm.Toolbar (Efl.Ui.Widget, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             @in data: const(void_ptr) @optional; [[The data to associate with the item for related callbacks.]]
          }
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Insert a new item into the toolbar object after item $after.
 
            A new item will be created and added to the toolbar. Its position in
@@ -234,7 +234,7 @@ class Elm.Toolbar (Efl.Ui.Widget, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             @in data: const(void_ptr) @optional; [[The data to associate with the item for related callbacks.]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Append item to the toolbar.
 
            A new item will be created and appended to the toolbar, i.e., will
@@ -271,7 +271,7 @@ class Elm.Toolbar (Efl.Ui.Widget, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
          [[Get the number of items in a toolbar]]
          return: uint; [[The number of items in $obj toolbar]]
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend item to the toolbar.
 
            A new item will be created and prepended to the toolbar, i.e., will

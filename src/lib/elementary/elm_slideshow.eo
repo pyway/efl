@@ -266,7 +266,7 @@ class Elm.Slideshow (Efl.Ui.Layout, Efl.Access.Widget.Action, Efl.Ui.Legacy)
            This removes (and deletes) all items in $obj, leaving it empty.
          ]]
       }
-      item_add {
+      item_add @beta {
          [[Add (append) a new item in a given slideshow widget.
 
            Add a new item to $obj's internal list of items, appending it.
@@ -282,7 +282,7 @@ class Elm.Slideshow (Efl.Ui.Layout, Efl.Access.Widget.Action, Efl.Ui.Legacy)
             @in data: const(void_ptr); [[The item's data.]]
          }
       }
-      item_sorted_insert {
+      item_sorted_insert @beta {
          [[Insert a new item into the given slideshow widget, using the
            $func function to sort items (by item handles).
 

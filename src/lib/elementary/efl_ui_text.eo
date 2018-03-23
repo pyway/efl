@@ -294,7 +294,7 @@ class Efl.Ui.Text (Efl.Ui.Layout, Elm.Interface_Scrollable, Efl.Ui.Clickable,
       selection_cut {
          [[This executes a "cut" action on the selected text in the entry.]]
       }
-      context_menu_item_add {
+      context_menu_item_add @beta {
          [[This adds an item to the entry's contextual menu.
 
            A longpress on an entry will make the contextual menu show up unless this

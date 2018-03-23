@@ -81,7 +81,7 @@ class Elm.List.Item(Elm.Widget.Item, Efl.Ui.Legacy)
                      item: Elm.Widget.Item; [[The item after or $null.]]
                 }
            }
-           /*      init { FIXME
+           /*      init @beta { FIXME
                    params {
                    Evas_Smart_Cb func;
                    const(void_ptr) data;

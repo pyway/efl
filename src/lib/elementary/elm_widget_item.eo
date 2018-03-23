@@ -270,7 +270,7 @@ class Elm.Widget.Item(Efl.Object, Efl.Access,
                 [[Update additional text part content]]
                 legacy: null;
            }
-           signal_callback_add {
+           signal_callback_add @beta {
                 [[Add a callback for a signal emitted by object item edje.
 
                   This function connects a callback function to a signal emitted by the
@@ -285,7 +285,7 @@ class Elm.Widget.Item(Efl.Object, Efl.Access,
                      data: void_ptr; [[A pointer to data to pass to the callback function.]]
                 }
            }
-           signal_callback_del {
+           signal_callback_del @beta {
                 [[Remove a signal-triggered callback from a object item edje object.
 
                   This function removes the last callback, previously attached to

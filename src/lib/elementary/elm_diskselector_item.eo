@@ -74,7 +74,7 @@ class Elm.Diskselector.Item(Elm.Widget.Item, Efl.Ui.Legacy)
                      selected: bool; [[The selected state]]
                 }
            }
-           /*      init { FIXME
+           /*      init @beta { FIXME
                    params {
                    Evas_Smart_Cb func;
                    const(void_ptr) data;

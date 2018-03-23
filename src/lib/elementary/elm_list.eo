@@ -203,7 +203,7 @@ class Elm.List (Efl.Ui.Layout, Elm.Interface_Scrollable,
             return: Elm.Widget.Item; [[The last item, or NULL if none]]
          }
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Insert a new item into the list object before item $before.
 
            A new item will be created and added to the list. Its position in
@@ -250,7 +250,7 @@ class Elm.List (Efl.Ui.Layout, Elm.Interface_Scrollable,
          evas_object_show(li);
          @endcode */
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Insert a new item into the list object after item $after.
 
            A new item will be created and added to the list. Its position in
@@ -302,7 +302,7 @@ class Elm.List (Efl.Ui.Layout, Elm.Interface_Scrollable,
             @out posret: int; [[The position relative to the item returned here]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Append a new item to the list object.
 
            A new item will be created and appended to the list, i.e., will
@@ -352,7 +352,7 @@ class Elm.List (Efl.Ui.Layout, Elm.Interface_Scrollable,
             @in data: const(void_ptr) @optional; [[The data to associate with the item for related callbacks.]]
          }
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend a new item to the list object.
 
            A new item will be created and prepended to the list, i.e., will
@@ -386,7 +386,7 @@ class Elm.List (Efl.Ui.Layout, Elm.Interface_Scrollable,
       clear {
          [[Remove all list's items.]]
       }
-      item_sorted_insert {
+      item_sorted_insert @beta {
          [[Insert a new item into the sorted list object.
 
            Note: This function inserts values into a list object assuming it was

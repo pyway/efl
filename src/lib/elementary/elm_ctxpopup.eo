@@ -127,7 +127,7 @@ class Elm.Ctxpopup (Efl.Ui.Layout, Efl.Ui.Focus.Layer, Efl.Access.Widget.Action,
       clear {
          [[Clear all items in the given ctxpopup object.]]
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Insert a new item to a ctxpopup object before item $before.
 
            See also elm_object_content_set.
@@ -144,7 +144,7 @@ class Elm.Ctxpopup (Efl.Ui.Layout, Efl.Ui.Focus.Layer, Efl.Access.Widget.Action,
             @in data: const(void_ptr) @optional; [[Data passed to $func]]
          }
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Insert a new item to a ctxpopup object after item $after.
 
            See also elm_object_content_set.
@@ -161,7 +161,7 @@ class Elm.Ctxpopup (Efl.Ui.Layout, Efl.Ui.Focus.Layer, Efl.Access.Widget.Action,
             @in data: const(void_ptr) @optional; [[Data passed to $func]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Add a new item to a ctxpopup object.
 
            Warning:Ctxpopup can't hold both an item list and a content at the same
@@ -178,7 +178,7 @@ class Elm.Ctxpopup (Efl.Ui.Layout, Efl.Ui.Focus.Layer, Efl.Access.Widget.Action,
             @in data: const(void_ptr) @optional; [[Data passed to $func]]
          }
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend a new item to a ctxpopup object.
 
            Warning: Ctxpopup can't hold both an item list and a content at the same

@@ -67,7 +67,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
             return: Elm.Widget.Item; [[The selected item, or NULL if none]]
          }
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend a new item to the multibuttonentry
 
            See @Efl.Object.del to delete the item.]]
@@ -83,7 +83,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
          [[Remove all items in the multibuttonentry.]]
 
       }
-      item_filter_remove {
+      item_filter_remove @beta {
          [[Remove a filter from the list
 
          Removes the given callback from the filter list. See elm_multibuttonentry_item_filter_append()
@@ -94,7 +94,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
             @in data: void_ptr; [[The user data passed when adding the function]]
          }
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Add a new item to the multibuttonentry before the indicated object reference.
 
            See @Efl.Object.del to delete the item.]]
@@ -107,7 +107,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
             @in data: void_ptr @optional; [[The pointer to the data to be attached]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Append a new item to the multibuttonentry
 
            See @Efl.Object.del to delete the item.]]
@@ -119,7 +119,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
             @in data: void_ptr @optional; [[The pointer to the data to be attached]]
          }
       }
-      item_filter_prepend {
+      item_filter_prepend @beta {
          [[Prepend a filter function for text inserted in the Multibuttonentry
 
            Prepend the given callback to the list. See elm_multibuttonentry_item_filter_append()
@@ -129,7 +129,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
             @in data: void_ptr; [[User data to pass to $func]]
          }
       }
-      item_filter_append {
+      item_filter_append @beta {
          [[Append an item filter function for text inserted in the Multibuttonentry
 
            Append the given callback to a list. This function is called
@@ -145,7 +145,7 @@ class Efl.Ui.Multibuttonentry (Efl.Ui.Layout, Efl.Ui.Clickable, Efl.Ui.Format)
             @in data: void_ptr; [[User data to pass to $func]]
          }
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Add a new item to the multibuttonentry after the indicated object
 
            See @Efl.Object.del to delete the item.]]

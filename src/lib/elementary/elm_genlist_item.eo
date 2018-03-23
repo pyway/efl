@@ -288,7 +288,7 @@ class Elm.Genlist.Item(Elm.Widget.Item.Static_Focus, Efl.Ui.Legacy)
                      pin: bool; [[The item pin state state ($true pin item, $false unpin item).]]
                 }
            }
-           /*      init { FIXME
+           /*      init @beta { FIXME
                    params {
                    Evas_Smart_Cb func;
                    const(void_ptr) data;

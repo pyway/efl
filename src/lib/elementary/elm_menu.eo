@@ -19,7 +19,7 @@ class Elm.Menu (Efl.Ui.Widget, Efl.Ui.Clickable, Efl.Ui.Menu,
             @in y: int; [[The new Y coordinate]]
          }
       }
-      item_add {
+      item_add @beta {
          [[Add an item at the end of the given menu widget.
 
            Note: This function does not accept relative icon path.

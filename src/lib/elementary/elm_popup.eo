@@ -140,7 +140,7 @@ class Elm.Popup (Efl.Ui.Layout, Efl.Access.Widget.Action, Efl.Ui.Legacy)
             scroll: bool; [[$true if it is to be scrollable, $false otherwise.]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Add a new item to a Popup object
 
            Both an item list and a content could not be set at the same time!

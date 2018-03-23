@@ -125,7 +125,7 @@ class Elm.Flipselector (Efl.Ui.Layout, Efl.Ui.Range,
            one onwards.
          ]]
       }
-      item_append {
+      item_append @beta {
          [[Append a (text) item to a flip selector widget
 
            The widget's list of labels to show will be appended with the

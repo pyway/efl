@@ -138,7 +138,7 @@ class Elm.Toolbar.Item(Elm.Widget.Item, Efl.Ui.Item, Efl.Ui.Focus.Object, Efl.Ui
                      state: ptr(Elm.Toolbar.Item.State) @nullable; [[Item state]]
                 }
            }
-           /*      init { FIXME
+           /*      init @beta { FIXME
                    params {
                    Evas_Smart_Cb func;
                    const(void_ptr) data;

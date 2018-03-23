@@ -328,7 +328,7 @@ class Elm.Gengrid (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
                                          (and on errors).]]
          }
       }
-      item_insert_before {
+      item_insert_before @beta {
          [[Insert an item before another in a gengrid widget.
 
            This inserts an item before another in the gengrid.
@@ -354,7 +354,7 @@ class Elm.Gengrid (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
            To update just one item, use \@ref elm_gengrid_item_update.
          ]]
       }
-      item_insert_after {
+      item_insert_after @beta {
          [[Insert an item after another in a gengrid widget.
 
            This inserts an item after another in the gengrid.
@@ -402,7 +402,7 @@ class Elm.Gengrid (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             @out yposret: int; [[The position relative to the item returned here.]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Append a new item in a given gengrid widget.
 
            This adds an item to the beginning of the gengrid.
@@ -416,7 +416,7 @@ class Elm.Gengrid (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
             @in func_data: const(void_ptr) @optional; [[Data to be passed to $func.]]
          }
       }
-      item_prepend {
+      item_prepend @beta {
          [[Prepend a new item in a given gengrid widget.
 
            This adds an item to the end of the gengrid.
@@ -438,7 +438,7 @@ class Elm.Gengrid (Efl.Ui.Layout, Efl.Ui.Focus.Composition, Elm.Interface_Scroll
            See \@ref elm_gengrid_item_del to remove just one item.
          ]]
       }
-      item_sorted_insert {
+      item_sorted_insert @beta {
          [[Insert an item in a gengrid widget using a user-defined sort
            function.
 

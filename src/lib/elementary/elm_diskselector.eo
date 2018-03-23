@@ -141,7 +141,7 @@ class Elm.Diskselector (Efl.Ui.Widget, Elm.Interface_Scrollable,
             return: Elm.Widget.Item; [[The selected diskselector item.]]
          }
       }
-      item_append {
+      item_append @beta {
          [[Appends a new item to the diskselector object.
 
            A new item will be created and appended to the diskselector, i.e., will
