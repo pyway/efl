@@ -72,7 +72,7 @@ option('ecore_file',
 
 option('ecore_avahi',
   type : 'boolean',
-  value : true,
+  value : false,
   description : 'build ecore_avahi'
 )
 
@@ -245,7 +245,7 @@ option('pulseaudio',
 
 option('avahi',
   type : 'boolean',
-  value : true,
+  value : false,
   description : 'avahi support' 
 )
 
