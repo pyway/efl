@@ -2,17 +2,17 @@ evas_image_loaders_file = [
   ['bmp', []],
   ['eet', [eet]],
   ['generic', [rt]],
-  ['gif', [giflib]],
+  ['gif', []],
   ['ico', []],
   ['jpeg', [jpeg]],
   ['pmaps', []],
-  ['png', [png]],
+  ['png', []],
   ['psd', []],
   ['tga', []],
   ['tgv', [rg_etc, lz4]],
-  ['tiff', [tiff]],
+  ['tiff', []],
   ['wbmp', []],
-  ['webp', [webp]],
+  ['webp', []],
   ['xpm', []],
 ]
 
@@ -21,8 +21,20 @@ foreach loader_inst : evas_image_loaders_file
 	loader_deps = loader_inst[1]
 
 
-  if get_option('evas-loaders-disabler').contains(loader) == false
+  opt = '-'.join(['image-format', loader])
+  if get_option(opt) == 'static'
   	file = join_paths(loader, 'evas_image_load_'+loader+'.c')
+
+    if loader == 'gif'
+      loader_deps += cc.find_library('gif')
+    elif loader == 'png'
+      loader_deps += dependency('libpng')
+    elif loader == 'tiff'
+      loader_deps += dependency('libtiff-4')
+    elif loader == 'webp'
+      loader_deps += dependency('libwebp')
+    endif
+
 
   	tmp = static_library('image_loader_'+loader, file,
   		include_directories : config_dir,

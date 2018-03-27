@@ -25,14 +25,6 @@ endif
 evas_force_static = ['software_generic', 'gl_common']
 evas_static_list = []
 
-#fixed dependencies by efl
-png = dependency('libpng')
-tiff = dependency('libtiff-4')
-giflib = cc.find_library('gif')
-
-#we need to make this a optional
-webp = dependency('libwebp')
-
 subdir('image_loaders')
 subdir('image_savers')
 subdir('model_savers')

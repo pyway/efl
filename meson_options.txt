@@ -311,15 +311,111 @@ option('evas-modules',
   description : 'how to build the evas modules' 
 )
 
-option('evas-loaders-disabler',
-  type : 'array',
-  description : 'add names here to disable the loaders',
-  choices : ['gst', 'pdf', 'ps', 'raw', 'svg', 'xcf', 'bmp', 'dds', 'eet', 'generic', 'gif', 'ico', 'jp2k', 'jpeg', 'pmaps', 'png', 'psd', 'tga', 'tgv', 'tiff', 'wbmp', 'webp', 'xpm'],
-  value : []
-)
-
 option('harfbuzz',
   type : 'boolean',
   value : false,
   description : 'harfbuzz support' 
+)
+
+option('image-format-bmp',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-dds',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-eet',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-generic',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-gif',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-ico',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-jp2k',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-jpeg',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-pmaps',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-png',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-psd',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-tga',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-tgv',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-tiff',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-wbmp',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-webp',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
+)
+option('image-format-xpm',
+  type : 'combo',
+  choices: ['static', 'shared', 'disabled'],
+  value : 'static',
+  description : 'build image support for this format'
 )
