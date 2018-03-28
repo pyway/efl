@@ -169,7 +169,22 @@ option('ecore_evas',
 option('ecore_imf',
   type : 'boolean',
   value : true,
-  description : 'build evas'
+  description : 'build ecore input methods'
+)
+option('xim',
+  type : 'boolean',
+  value : true,
+  description : 'build XIM input module'
+)
+option('ibus',
+  type : 'boolean',
+  value : false,
+  description : 'build ibus input module'
+)
+option('scim',
+  type : 'boolean',
+  value : false,
+  description : 'build SCIMinput module'
 )
 
 option('build-id',
