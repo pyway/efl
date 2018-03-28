@@ -296,9 +296,9 @@ endif
 #   eina_config.set('EINA_HAVE_DEBUG_THREADS', '1')
 #endif
 
-eina_config.set('EINA_SIZEOF_WCHAR_T', cc.sizeof('wchar_t'))
+eina_config.set('EINA_SIZEOF_WCHAR_T', cc.sizeof('wchar_t', prefix: '#include <wchar.h>'))
 
-eina_config.set('EINA_SIZEOF_UINTPTR_T', cc.sizeof('uintptr_t'))
+eina_config.set('EINA_SIZEOF_UINTPTR_T', cc.sizeof('uintptr_t', prefix: '#include <stdint.h>'))
 
 if cc.has_header('dirent.h')
    eina_config.set('EINA_CONFIGURE_HAVE_DIRENT_H', '1')
