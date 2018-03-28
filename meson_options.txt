@@ -419,3 +419,34 @@ option('image-format-xpm',
   value : 'static',
   description : 'build image support for this format'
 )
+
+option('image-format-gst',
+  type : 'boolean',
+  value : 'true',
+  description : 'build image support for this format'
+)
+option('image-format-pdf',
+  type : 'boolean',
+  value : 'true',
+  description : 'build image support for this format'
+)
+option('image-format-ps',
+  type : 'boolean',
+  value : 'true',
+  description : 'build image support for this format'
+)
+option('image-format-raw',
+  type : 'boolean',
+  value : 'true',
+  description : 'build image support for this format'
+)
+option('image-format-svg',
+  type : 'boolean',
+  value : 'true',
+  description : 'build image support for this format'
+)
+option('image-format-xcf',
+  type : 'boolean',
+  value : 'true',
+  description : 'build image support for this format'
+)

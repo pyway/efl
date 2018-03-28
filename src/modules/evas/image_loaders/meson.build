@@ -1,4 +1,4 @@
-evas_image_loaders_file = [
+evas_image_mods_file = [
   ['bmp', []],
   ['eet', [eet]],
   ['generic', [rt]],
@@ -16,39 +16,50 @@ evas_image_loaders_file = [
   ['xpm', []],
 ]
 
-foreach loader_inst : evas_image_loaders_file
-	loader = loader_inst[0]
-	loader_deps = loader_inst[1]
+foreach mod_inst : evas_image_mods_file
+  mod = mod_inst[0]
+  mod_deps = mod_inst[1]
 
 
-  opt = '-'.join(['image-format', loader])
-  if get_option(opt) == 'static'
-  	file = join_paths(loader, 'evas_image_load_'+loader+'.c')
-
-    if loader == 'gif'
-      loader_deps += cc.find_library('gif')
-    elif loader == 'png'
-      loader_deps += dependency('libpng')
-    elif loader == 'tiff'
-      loader_deps += dependency('libtiff-4')
-    elif loader == 'webp'
-      loader_deps += dependency('libwebp')
+  opt = '-'.join(['image-format', mod])
+  file = join_paths(mod, 'evas_image_load_'+mod+'.c')
+  if get_option(opt) == 'disabled'
+    message('Image loader '+mod+' disabled')
+  else
+    if mod == 'gif'
+      mod_deps += cc.find_library('gif')
+    elif mod == 'png'
+      mod_deps += dependency('libpng')
+    elif mod == 'tiff'
+      mod_deps += dependency('libtiff-4')
+    elif mod == 'webp'
+      mod_deps += dependency('libwebp')
     endif
 
+    if get_option(opt) == 'static'
+      tmp = static_library('image_loader_'+mod, file,
+        include_directories : config_dir,
+        dependencies : [evas_pre] + mod_deps
+      )
 
-  	tmp = static_library('image_loader_'+loader, file,
-  		include_directories : config_dir,
-  		dependencies : [evas_pre] + loader_deps
-  	)
-
-    evas_static_list += [declare_dependency(
-      sources: file,
-      dependencies: loader_deps,
-    )]
-
-  	config_h.set('EVAS_STATIC_BUILD_'+loader.to_upper(), '1')
-    config_h.set('BUILD_LOADER_'+loader.to_upper(), '1')
-  else
-    message('Image loader '+loader+' disabled')
+      evas_static_list += [declare_dependency(
+        sources: file,
+        dependencies: mod_deps,
+      )]
+      config_h.set('EVAS_STATIC_BUILD_'+mod.to_upper(), '1')
+    else
+      mod_dir = join_paths([dir_package_modules, 'image_loaders', mod, module_version])
+      name = '_'.join(['image_loader', mod])
+      built_mod = shared_module(name, file,
+                    include_directories: config_dir,
+                    name_prefix        : '',
+                    dependencies       : [ mod_deps ],
+                    install_dir        : mod_dir,
+                    install            : true,
+                    link_args          : '-Wl,--unresolved-symbols=ignore-all'
+                   )
+      module_files += built_mod.full_path()
+    endif
+    config_h.set('BUILD_LOADER_'+mod.to_upper(), '1')
   endif
 endforeach

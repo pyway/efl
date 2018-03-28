@@ -20,7 +20,8 @@ foreach loader : generic_loaders
   generic_deps = []
   generic_support = []
 
-  if get_option('evas-loaders-disabler').contains(loader) == false
+  opt = '-'.join(['image-format', loader])
+  if get_option(opt) == true
     subdir(loader)
 
     tmp = shared_module('image_loader.'+loader,

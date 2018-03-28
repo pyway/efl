@@ -37,6 +37,7 @@ endif
 
 module_arch = '@0@-@1@-@2@'.format(host_os, host_machine.cpu_family(), meson.project_version())
 module_files = []
+module_version = 'v-@0@.@1@'.format(version_major, version_minor)
 evas_loader_map = []
 
 #install paths
