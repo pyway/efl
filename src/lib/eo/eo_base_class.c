@@ -122,24 +122,24 @@ _efl_pending_futures_clear(Efl_Object_Data *pd)
      }
 }
 
-// Generate the invalidate event in all case and make sure it happens
-// before any user code can change the children invalidate state. This
-// make sure that the entire tree of object is valid at the time of
-// the invalidate event.
 static void
-_efl_invalidate(Eo *obj)
-{
-   efl_event_callback_call(obj, EFL_EVENT_INVALIDATE, NULL);
-
-   efl_invalidate(obj);
-}
-
-static void
-_efl_object_invalidate(Eo *obj, Efl_Object_Data *pd)
+_efl_object_invalidate(Eo *obj_id, Efl_Object_Data *pd)
 {
    _efl_pending_futures_clear(pd);
-   efl_parent_set(obj, NULL);
-   pd->invalidate = EINA_TRUE;
+
+   // Invalidate all children too
+   EINA_INLIST_FOREACH_SAFE(pd->children, l, child)
+     {
+        Eo *child_id = _eo_obj_id_get(child);
+        efl_parent_set(child_id, NULL);
+     }
+
+   // Finally invalidate itself
+   efl_parent_set(obj_id, NULL);
+
+   EO_OBJ_POINTER(obj_id, obj);
+   obj->invalidate = EINA_TRUE;
+   EO_OBJ_DONE(obj_id);
 }
 
 static void
@@ -652,10 +652,11 @@ _efl_object_parent_sink_set(Eo *obj, Eina_Bool sink)
 }
 
 void
-_efl_object_reuse(Eo *obj)
+_efl_object_reuse(Eo *obj_id)
 {
-   Efl_Object_Data *pd = efl_data_scope_get(obj, EFL_OBJECT_CLASS);
-   pd->invalidate = EINA_FALSE;
+   EO_OBJ_POINTER(obj_id, obj);
+   obj->invalidate = EINA_FALSE;
+   EO_OBJ_DONE(obj_id);
 }
 
 EOLIAN static void
@@ -666,14 +667,15 @@ _efl_object_parent_set(Eo *obj, Efl_Object_Data *pd, Eo *parent_id)
        ((parent_id) && (!_eo_id_domain_compatible(parent_id, obj))))
      return;
 
+   EO_OBJ_POINTER(obj, eo_obj);
+
    // Invalidated object can not be bring back to life
-   if (pd->invalidate)
+   if (eo_obj->invalidate)
      {
         ERR("Call of efl_parent_set(%p, %p) when object is already invalidated.\n", obj, parent_id);
-	return ;
+        goto err_impossible;
      }
 
-   EO_OBJ_POINTER(obj, eo_obj);
    if (pd->parent)
      {
         Efl_Object_Data *old_parent_pd = efl_data_scope_get(pd->parent,
@@ -713,7 +715,7 @@ _efl_object_parent_set(Eo *obj, Efl_Object_Data *pd, Eo *parent_id)
    else
      {
         pd->parent = NULL;
-        if (prev_parent) _efl_invalidate(obj);
+        if (prev_parent) _efl_invalidate(eo_obj);
         if (prev_parent && !eo_obj->del_triggered) efl_unref(obj);
      }
 
@@ -749,15 +751,22 @@ _efl_object_finalized_get(Eo *obj_id, Efl_Object_Data *pd EINA_UNUSED)
 }
 
 EOLIAN static Eina_Bool
-_efl_object_invalidated_get(Eo *obj_id EINA_UNUSED, Efl_Object_Data *pd)
+_efl_object_invalidated_get(Eo *obj_id, Efl_Object_Data *pd EINA_UNUSED)
 {
-   return pd->invalidate;
+   Eina_Bool invalidate;
+   EO_OBJ_POINTER_RETURN_VAL(obj_id, obj, EINA_TRUE);
+   invalidate = obj->invalidate;
+   EO_OBJ_DONE(obj_id);
+   return invalidate;
 }
 
 EOLIAN static Efl_Object *
 _efl_object_provider_find(const Eo *obj, Efl_Object_Data *pd, const Efl_Object *klass)
 {
-   if (pd->invalidate)
+   Eina_Bool invalidate;
+
+   invalidate = _efl_object_invalidated_get((Eo*) obj, NULL);
+   if (invalidate)
      {
         ERR("Calling efl_provider_find(%p) after the object was invalidated.", obj);
 	return NULL;
@@ -2005,11 +2014,15 @@ efl_future_cb_from_desc(Eo *o, const Efl_Future_Cb_Desc desc)
    Efl_Future_Pending *pending = NULL;
    Eina_Future **storage = NULL;
    Efl_Object_Data *pd;
+   Eina_Bool invalidate;
 
    EINA_SAFETY_ON_NULL_GOTO(o, end);
    pd = efl_data_scope_get(o, EFL_OBJECT_CLASS);
    EINA_SAFETY_ON_NULL_GOTO(pd, end);
-   EINA_SAFETY_ON_TRUE_GOTO(pd->invalidate, end);
+   EO_OBJ_POINTER_GOTO(o, eo_obj, end);
+   invalidate = eo_obj->invalidate;
+   EO_OBJ_DONE(o);
+   EINA_SAFETY_ON_TRUE_GOTO(invalidate, end);
    pending = _efl_pending_future_new();
    EINA_SAFETY_ON_NULL_GOTO(pending, end);
    memcpy(&pending->desc, &desc, sizeof(Efl_Future_Cb_Desc));
@@ -2076,13 +2089,6 @@ _efl_object_destructor(Eo *obj, Efl_Object_Data *pd)
    _Eo_Object *obj_data2 = NULL;
 
    DBG("%p - %s.", obj, efl_class_name_get(obj));
-
-   // If the object has been invalidated yet, time to do it
-   // This can happen when the object has no parent and get
-   // deleted by efl_unref.
-   if (!pd->invalidate)
-     _efl_invalidate(obj);
-
 
    // special removal - remove from children list by hand after getting
    // child handle in case unparent method is overridden and does
