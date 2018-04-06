@@ -59,7 +59,7 @@ _elm_widget_item_static_focus_efl_ui_focus_object_prepare_logical_none_recursive
         return;
      }
 
-   logical_child = efl_ui_focus_manager_request_subchild(wpd->widget, obj);
+   logical_child = efl_ui_focus_manager_request_subchild(obj, obj);
 
    if (!logical_child)
      {
