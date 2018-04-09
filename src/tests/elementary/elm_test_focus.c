@@ -793,5 +793,5 @@ void elm_test_focus(TCase *tc)
     tcase_add_test(tc, test_request_subchild_child_regular_regular);
     tcase_add_test(tc, test_unregister_last_focused_no_history);
     tcase_add_test(tc, test_unregister_last_focused);
-    tcase_add_test(tc, test_unregister_last_focused_no_child);
+    tcase_add_test(tc, test_pop_history_element);
 }
