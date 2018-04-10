@@ -1403,7 +1403,7 @@ _elm_popup_efl_canvas_group_group_add(Eo *obj, Elm_Popup_Data *priv)
 
    efl_canvas_group_add(efl_super(obj, MY_CLASS));
    elm_widget_sub_object_parent_add(obj);
-
+ 
    snprintf(style, sizeof(style), "popup/%s", elm_widget_style_get(obj));
 
    priv->notify = elm_notify_add(obj);
@@ -1453,9 +1453,6 @@ _elm_popup_efl_canvas_group_group_add(Eo *obj, Elm_Popup_Data *priv)
 
    priv->content_text_wrap_type = ELM_WRAP_MIXED;
    efl_event_callback_array_add(priv->notify, _notify_cb(), obj);
-
-   elm_widget_can_focus_set(obj, EINA_TRUE);
-   elm_widget_can_focus_set(priv->main_layout, EINA_TRUE);
 
    _populate_theme_scroll(priv);
 
