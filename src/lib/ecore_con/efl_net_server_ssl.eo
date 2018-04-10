@@ -21,6 +21,7 @@ class Efl.Net.Server.Ssl (Efl.Net.Server.Tcp) {
 
     implements {
         Efl.Object.constructor;
+        Efl.Object.invalidate;
         Efl.Object.destructor;
         Efl.Net.Server.client_announce;
         Efl.Net.Server.Fd.client_add;
