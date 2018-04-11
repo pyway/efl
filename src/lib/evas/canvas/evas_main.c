@@ -1350,7 +1350,7 @@ _evas_pointer_data_remove(Evas_Public_Data *edata, Efl_Input_Device *pointer)
    seat = efl_input_device_seat_get(pointer);
    EINA_INLIST_FOREACH(edata->seats, pseat)
      {
-        if (pseat->seat != seat) continue;
+        if (seat && (pseat->seat != seat)) continue;
         EINA_INLIST_FOREACH(pseat->pointers, pdata)
           if (pdata->pointer == pointer)
             {
