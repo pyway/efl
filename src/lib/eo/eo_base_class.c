@@ -125,6 +125,9 @@ _efl_pending_futures_clear(Efl_Object_Data *pd)
 static void
 _efl_object_invalidate(Eo *obj_id, Efl_Object_Data *pd)
 {
+   Eina_Inlist *l;
+   _Eo_Object *child;
+
    _efl_pending_futures_clear(pd);
 
    // Invalidate all children too
