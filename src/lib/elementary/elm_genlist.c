@@ -5710,7 +5710,6 @@ _elm_genlist_efl_canvas_group_group_del(Eo *obj, Elm_Genlist_Data *sd)
 {
    int i;
 
-   elm_genlist_clear(obj);
    for (i = 0; i < 2; i++)
      ELM_SAFE_FREE(sd->stack[i], evas_object_del);
 
