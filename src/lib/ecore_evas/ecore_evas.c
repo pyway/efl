@@ -3494,7 +3494,7 @@ _ecore_evas_mouse_move_process_internal(Ecore_Evas *ee,
 
    efl_event_callback_legacy_call(ee->evas,
                                   _event_description_get(ev->action), evt);
-   efl_unref(evt);
+   efl_del(evt);
 }
 
 EAPI void
@@ -4712,7 +4712,7 @@ _direct_mouse_move_cb(Ecore_Evas *ee, const Ecore_Event_Mouse_Move *info)
 
    efl_event_callback_legacy_call(e, _event_description_get(ev->action), evt);
    processed = ev->evas_done;
-   efl_unref(evt);
+   efl_del(evt);
 
    return processed;
 }
@@ -4747,7 +4747,7 @@ _direct_mouse_wheel_cb(Ecore_Evas *ee, const Ecore_Event_Mouse_Wheel *info)
 
    efl_event_callback_legacy_call(e, _event_description_get(ev->action), evt);
    processed = ev->evas_done;
-   efl_unref(evt);
+   efl_del(evt);
 
    return processed;
 }
@@ -4777,7 +4777,7 @@ _direct_mouse_inout(Ecore_Evas *ee, const Ecore_Event_Mouse_IO *info, Efl_Pointe
 
    efl_event_callback_legacy_call(e, _event_description_get(ev->action), evt);
    processed = ev->evas_done;
-   efl_unref(evt);
+   efl_del(evt);
 
    return processed;
 }
@@ -4907,7 +4907,7 @@ _direct_axis_update_cb(Ecore_Evas *ee, const Ecore_Event_Axis_Update *info)
 
    efl_event_callback_legacy_call(e, _event_description_get(ev->action), evt);
    processed = ev->evas_done;
-   efl_unref(evt);
+   efl_del(evt);
 
    return processed;
 }
@@ -4949,7 +4949,7 @@ _direct_key_updown_cb(Ecore_Evas *ee, const Ecore_Event_Key *info, Eina_Bool dow
      efl_event_callback_legacy_call(e, EFL_EVENT_KEY_UP, evt);
 
    processed = ev->evas_done;
-   efl_unref(evt);
+   efl_del(evt);
 
    return processed;
 }
