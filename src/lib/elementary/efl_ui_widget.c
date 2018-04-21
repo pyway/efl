@@ -351,7 +351,7 @@ _tree_custom_chain_missing(Eo *obj)
 
    while (elm_widget_parent_get(wid))
      {
-        Efl_Ui_Widget *parent = elm_widget_parent_widget_get(wid);
+        Efl_Ui_Widget *parent = elm_widget_parent_get(wid);
         ELM_WIDGET_DATA_GET(parent, parent_pd);
         Eina_List *lst = parent_pd->legacy_focus.custom_chain;
 
