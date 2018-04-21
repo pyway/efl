@@ -730,6 +730,7 @@ void                *_elm_icon_signal_callback_del(Evas_Object *obj,
 
 /* DO NOT USE THIS this is only for performance optimization! */
 void                 _elm_widget_full_eval(Eo *obj);
+void                 _elm_widget_full_eval_children(Eo *obj, Elm_Widget_Smart_Data *pd);
 
 Eina_Bool _elm_config_accel_preference_parse(const char *pref, Eina_Stringshare **accel, int *gl_depth, int *gl_stencil, int *gl_msaa);
 
