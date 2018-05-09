@@ -681,6 +681,8 @@ _elm_scroller_content_set(Eo *obj, Elm_Scroller_Data *sd, const char *part, Evas
      }
 
    elm_layout_sizing_eval(obj);
+   //XXX: HACK
+   efl_ui_focus_manager_root_focus_canvas_object_set(obj, content);
 
    return EINA_TRUE;
 }
