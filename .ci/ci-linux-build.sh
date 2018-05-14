@@ -37,7 +37,7 @@ if [ "$CI_BUILD_TYPE" = "" ]; then
   make -j $PARALLEL_JOBS examples
   make -j $PARALLEL_JOBS benchmark
   make -j $PARALLEL_JOBS install
-  ./.ci/build-efl-app
+  ./.ci/build-efl-app.sh
 fi
 
 if [ "$CI_BUILD_TYPE" = "wayland" ]; then
