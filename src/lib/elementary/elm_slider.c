@@ -1108,7 +1108,7 @@ _elm_slider_efl_part_part_get(const Eo *obj, Elm_Slider_Data *sd EINA_UNUSED, co
    if (eina_streq(part, "indicator"))
      return ELM_PART_IMPLEMENT(ELM_SLIDER_PART_INDICATOR_CLASS, obj, part);
 
-   return efl_part(efl_super(obj, MY_CLASS), part);
+   return efl_part_get(efl_super(obj, MY_CLASS), part);
 }
 
 EOLIAN static void
