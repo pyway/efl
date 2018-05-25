@@ -60,3 +60,16 @@ CLEANFILES += $(share_DATA)
 exactness_play.edj: bin/exactness/player_entry.edc bin/edje/edje_cc${EXEEXT}
 	$(AM_V_EDJ) \
 	$(EDJE_CC) $(EDJE_CC_FLAGS) -sd $(top_srcdir)/data/elementary/themes/snd -id $(top_srcdir)/data/elementary/themes/img $< $@
+
+### Tests"
+if HAVE_EXACTNESS_TESTS
+
+AM_TESTS_ENVIRONMENT += EXACTNESS_DATA_PATH='$(top_srcdir)'/data/exactness/elm/default-profile
+AM_TESTS_ENVIRONMENT += MAKEFLAGS='${MAKEFLAGS}'
+
+exactness_test:
+	$(AM_TESTS_ENVIRONMENT) tests/exactness/exactness_test.sh
+
+TESTS += tests/exactness/exactness_test.sh
+
+endif
